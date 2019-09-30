@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/renanherdy/fly-video-producer#readme",
   "dependencies": {
+    "fluent-ffmpeg": "^2.1.2",
     "readline-sync": "^1.4.10"
   }
 }
