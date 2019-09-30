@@ -1,0 +1,37 @@
+{
+  "source": {
+    "videoFiles": [
+      "..."
+    ],
+    "audioFiles": [
+      "..."
+    ],
+    "imageFiles": [
+      "..."
+    ],
+    "trackFiles": [
+      "..."
+    ]
+  },
+  "output": {
+    "layers": [
+      {
+        "layer": [
+          {
+            "composition": {
+              "source": {
+                "effects": {
+                  "...": "..."
+                }
+              },
+              "output": {
+                "start": "int",
+                "end": "int"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
