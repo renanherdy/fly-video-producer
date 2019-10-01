@@ -1,9 +1,9 @@
-const menu = require('./menu.js');
-const autoSlice = require('./videoSlicer.js');
+const init = require('./templates/paragliderFlight');
 function start() {
   console.log("Hello World!");
   // menu();
-  autoSlice();
+  // autoSlice();
+  init();
 }
 
 start()
