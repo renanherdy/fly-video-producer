@@ -1,0 +1,18 @@
+{
+  "appId": "br.com.flyvideoproducer",
+  "appName": "Fly Video Producer",
+  "bundledWebRuntime": true,
+  "npmClient": "yarn",
+  "webDir": "build",
+  "server": {
+    "url": "http://192.168.0.8:8100",
+    "hostname": "app",
+    "iosScheme": "ionic",
+    "androidScheme": "http",
+    "allowNavigation": [
+      "example.org",
+      "*.example.org",
+      "192.0.2.1"
+    ]
+  }
+}

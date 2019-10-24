@@ -1,6 +1,6 @@
-const autoSlice = require('../src/videoSlicer');
+import { autoSlice } from '../src/videoSlicer';
 
-module.exports = function init(){
+export const init = function () {
   const groups = [];
   // groups.push(intro);
   // groups.push(preFlight);
@@ -15,7 +15,7 @@ module.exports = function init(){
   }
 }
 
-function flight(){
+function flight() {
   const sources = askForFiles();
   const outputs = []
   for (let i = 0; i < sources.length; i++) {
@@ -24,7 +24,7 @@ function flight(){
   }
 }
 
-function askForFiles(){
+function askForFiles() {
   const sources = [];
   sources.push({
     localPath: '/home/renanherdy/git/fly-video-producer/source-files/12-02-51-GOPR8939.mp4'

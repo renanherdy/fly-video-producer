@@ -1,149 +1,180 @@
-const ffmpeg = require('fluent-ffmpeg');
-const fs = require('fs');
-const path = require('path');
-module.exports = autoSlice;
+const ffmpeg = require("fluent-ffmpeg");
+const fs = require("fs");
+const path = require("path");
 
-
-const outDir = './output-files/';
-const inDir = './source-files/';
-const mergedFilePath = path.join(outDir, 'merged-video.mp4');
+// const outDir = './output-files/';
+// const inDir = './source-files/';
+// const mergedFilePath = path.path.join(outDir, 'fly-video.mp4');
 const sliceMaxLength = 6;
 const sliceMinLength = 3;
 const maxSliceQty = 8;
 
-async function autoSlice() {
-  cleanOutputDirectory();
-  const inputFiles = await loadInputFiles();
+module.exports = async function autoSlice(inputFiles) {
+  // cleanOutputDirectory();
+  // const inputFiles = await loadInputFiles();
+  console.log("autoSlice called");
+  console.log("inputFiles");
+  console.log(inputFiles);
   const slicingData = await calculateSlicingData(inputFiles);
-  await renderToFile(slicingData);
+  console.log("slicing ok");
+  const outDir = path.join(path.dirname(inputFiles[0].path), "output-files");
+  if (!fs.existsSync(outDir)) {
+    fs.mkdirSync(outDir);
+  }
+  const mergedFilePath = path.join(outDir, "fly-video.mp4");
+  await renderToFile(slicingData, mergedFilePath, outDir);
 }
-async function renderToFile(slicingData) {
+async function renderToFile(slicingData, mergedFilePath, outDir) {
   const outputFiles = [];
   const inputPromises = [];
   let i = 0;
-  for (inputFile of slicingData) {
+  for (let inputFile of slicingData) {
     inputFile.promisesArray = [];
-    for (slice of inputFile.slices.sliceArray) {
+    for (let slice of inputFile.slices.sliceArray) {
       i++;
-      slice.outputPath = path.join(outDir, 'slice-' + pad(i, 3) + '.mp4')
+      slice.outputPath = path.join(outDir, "slice-" + pad(i, 3) + ".mp4");
       outputFiles.push(slice.outputPath);
       inputFile.promisesArray.push(await saveSlice(inputFile, slice));
     }
-    inputPromises.push(Promise.all(inputFile.promisesArray)
-      .then((data) => {
-        console.log(inputFile.path + ' finished');
-        console.log('data');
-        console.log(data);
-        return data;
-      })
-      .catch(err => {
-        console.log('err');
-        console.log(err);
-      }));
+    inputPromises.push(
+      Promise.all(inputFile.promisesArray)
+        .then(data => {
+          console.log(inputFile.path + " finished");
+          console.log("data");
+          console.log(data);
+          return data;
+        })
+        .catch(err => {
+          console.log("err");
+          console.log(err);
+        })
+    );
   }
   Promise.all(inputPromises)
-    .then((data) => {
-      console.log('all input files processed for slicing');
-      console.log('data');
+    .then(data => {
+      console.log("all input files processed for slicing");
+      console.log("data");
       console.log(data);
       return data;
     })
-    .then((data) => {
-      return mergeOutputs(data);
+    .then(data => {
+      return mergeOutputs(data, mergedFilePath, outDir);
     })
     .catch(err => {
-      console.log('err');
+      console.log("err");
       console.log(err);
     });
 }
-async function mergeOutputs(data) {
+async function mergeOutputs(data, mergedFilePath, outDir) {
   return new Promise((resolve, reject) => {
     const ffmpegCommand = ffmpeg();
-    console.log('data');
+    console.log("data");
     console.log(data);
-    for (group of data) {
-      for (file of group) {
+    for (let group of data) {
+      for (let file of group) {
         ffmpegCommand.addInput(file.outputPath);
       }
     }
     ffmpegCommand
       .mergeToFile(mergedFilePath, outDir)
-      .on('end', () => {
-        console.log('renderização concluída');
+      .on("end", () => {
+        console.log("renderização concluída");
         resolve(mergedFilePath);
       })
-      .on('error', (err) => {
+      .on("error", err => {
         console.log(err);
         reject(err);
-      })
+      });
   });
 }
 
 async function saveSlice(inputFile, slice) {
   return new Promise((resolve, reject) => {
+    console.log("saving slice input path");
+    console.log(inputFile.path);
     const ffmpegCommand = ffmpeg(inputFile.path);
     ffmpegCommand
       .setStartTime(slice.start)
       .setDuration(inputFile.slices.duration)
+      .withVideoCodec("libx264")
+      .withVideoBitrate("4000k")
+      .withSize("1920x1080")
       .saveToFile(slice.outputPath)
-      .on('end', () => {
-        console.log('slice');
+      .on("end", () => {
+        console.log("slice");
         console.log(slice);
         resolve(slice);
       })
-      .on('error', (err) => {
+      .on("error", err => {
+        console.log("saving slice error");
+        console.log(err);
         reject(err);
       });
   });
 }
 
 function pad(number, width) {
-  return new Array(+width + 1 - (number + '').length).join('0') + number;
+  return new Array(+width + 1 - (number + "").length).join("0") + number;
 }
 
 async function calculateSlicingData(inputFiles) {
   const promisesArray = [];
   for (const inputFile of inputFiles) {
-    promisesArray.push(new Promise((resolve, reject) => {
-      ffmpeg.ffprobe(inputFile.path, (err, data) => {
-        if (err) {
-          reject(err);
-        }
-        inputFile.ffprobeData = data;
-        const duration = data.format.duration;
-        inputFile.slices = {};
+    promisesArray.push(
+      new Promise((resolve, reject) => {
+        console.log("calculating file");
+        console.log(inputFile.path);
+        ffmpeg.ffprobe(inputFile.path, (err, data) => {
+          if (err) {
+            reject(err);
+          }
+          inputFile.ffprobeData = data;
+          const duration = data.format.duration;
+          inputFile.slices = {};
 
-        if (duration <= 2 * sliceMinLength) {
-          inputFile.slices.qty = 1;
-          inputFile.slices.duration = duration;
-        } else if (duration <= 3 * sliceMinLength) {
-          inputFile.slices.qty = 2;
-          inputFile.slices.duration = sliceMaxLength - ((sliceMaxLength - sliceMinLength) / 2);
-        } else if (duration <= 5 * sliceMinLength) {
-          inputFile.slices.qty = 3;
-          inputFile.slices.duration = sliceMaxLength - ((sliceMaxLength - sliceMinLength) / 3);
-        } else if (duration <= 10 * sliceMinLength) {
-          inputFile.slices.qty = 5;
-          inputFile.slices.duration = sliceMaxLength - ((sliceMaxLength - sliceMinLength) / 4);
-        } else if (duration <= 20 * sliceMinLength) {
-          inputFile.slices.qty = 7;
-          inputFile.slices.duration = sliceMaxLength - ((sliceMaxLength - sliceMinLength) / 2);
-        } else {
-          inputFile.slices.qty = maxSliceQty;
-          inputFile.slices.duration = sliceMinLength;
-        }
-        inputFile.slices.sliceArray = getSliceArray(duration, inputFile.slices);
-        resolve(inputFile);
-      });
-    }));
+          if (duration <= 2 * sliceMinLength) {
+            inputFile.slices.qty = 1;
+            inputFile.slices.duration = duration;
+          } else if (duration <= 3 * sliceMinLength) {
+            inputFile.slices.qty = 2;
+            inputFile.slices.duration =
+              sliceMaxLength - (sliceMaxLength - sliceMinLength) / 2;
+          } else if (duration <= 5 * sliceMinLength) {
+            inputFile.slices.qty = 3;
+            inputFile.slices.duration =
+              sliceMaxLength - (sliceMaxLength - sliceMinLength) / 3;
+          } else if (duration <= 10 * sliceMinLength) {
+            inputFile.slices.qty = 5;
+            inputFile.slices.duration =
+              sliceMaxLength - (sliceMaxLength - sliceMinLength) / 4;
+          } else if (duration <= 20 * sliceMinLength) {
+            inputFile.slices.qty = 7;
+            inputFile.slices.duration =
+              sliceMaxLength - (sliceMaxLength - sliceMinLength) / 2;
+          } else {
+            inputFile.slices.qty = maxSliceQty;
+            inputFile.slices.duration = sliceMinLength;
+          }
+          inputFile.slices.sliceArray = getSliceArray(
+            duration,
+            inputFile.slices
+          );
+          console.log("calculated file");
+          console.log(inputFile);
+          resolve(inputFile);
+        });
+      })
+    );
     //   .saveToFile('./output-files/slice2.mp4')
   }
   return new Promise((resolve, reject) => {
     Promise.all(promisesArray)
-      .then((arr) => {
+      .then(arr => {
+        console.log("all sliced");
+        console.log(arr);
         resolve(arr);
       })
-      .catch((err) => {
+      .catch(err => {
         reject(err);
       });
   });
@@ -154,23 +185,22 @@ function getSliceArray(duration, slices) {
   const onTime = slices.qty * slices.duration;
   const offTime = duration - onTime;
   if (slices.qty === 1) {
-
     return [{ start: 0, end: slices.duration }];
   }
   const intervalBetweenSlices = offTime / (slices.qty - 1);
   for (let i = 0; i < slices.qty; i++) {
     sliceArray.push({
-      start: (i * slices.duration) + (i * intervalBetweenSlices),
-      stop: (i * slices.duration) + (i * intervalBetweenSlices) + slices.duration
+      start: i * slices.duration + i * intervalBetweenSlices,
+      stop: i * slices.duration + i * intervalBetweenSlices + slices.duration
     });
   }
   return sliceArray;
 }
 
-async function loadInputFiles() {
+async function loadInputFiles(inDir) {
   return new Promise((resolve, reject) => {
-    inputFiles = [];
-    fs.readdir(inDir, (err, files) => {
+    const inputFiles = [];
+    readdir(inDir, (err, files) => {
       if (err) {
         reject();
       }
@@ -182,12 +212,12 @@ async function loadInputFiles() {
   });
 }
 
-function cleanOutputDirectory() {
-  fs.readdir(outDir, (err, files) => {
+function cleanOutputDirectory(outDir) {
+  readdir(outDir, (err, files) => {
     if (err) throw err;
 
     for (const file of files) {
-      fs.unlink(path.join(outDir, file), err => {
+      unlink(path.join(outDir, file), err => {
         if (err) throw err;
       });
     }

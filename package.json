@@ -3,13 +3,54 @@
   "version": "1.0.0",
   "description": "fly-video-producer is a tool for producing automated full HD videos.",
   "main": "index.js",
+  "dependencies": {
+    "@capacitor/cli": "^1.2.1",
+    "@capacitor/core": "^1.2.1",
+    "@ionic/react": "^4.11.0",
+    "@ionic/react-router": "^4.11.0",
+    "@types/jest": "^24.0.18",
+    "@types/node": "^12.7.12",
+    "@types/react": "^16.9.5",
+    "@types/react-dom": "^16.9.1",
+    "@types/react-router": "^5.1.1",
+    "@types/react-router-dom": "^5.1.0",
+    "express": "^4.17.1",
+    "fluent-ffmpeg": "^2.1.2",
+    "ionicons": "^4.6.3",
+    "react": "^16.10.2",
+    "react-dom": "^16.10.2",
+    "react-router": "^5.1.0",
+    "react-router-dom": "^5.1.0",
+    "react-scripts": "3.2.0",
+    "typescript": "3.6.3"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "concurrently 'yarn server' 'yarn client' ",
+    "server": "node src/api/electronServer.js",
+    "client": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "electron:dev": "concurrently 'npx cap open electron' 'yarn start' "
+
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/renanherdy/fly-video-producer.git"
+  "proxy": "http://localhost:3001/",
+  "eslintConfig": {
+    "extends": "react-app"
   },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "repository": "git+https://github.com/renanherdy/fly-video-producer.git",
   "keywords": [
     "automated",
     "video",
@@ -17,12 +58,12 @@
   ],
   "author": "Renan Herdy e Silva",
   "license": "MIT",
+  "homepage": ".",
   "bugs": {
     "url": "https://github.com/renanherdy/fly-video-producer/issues"
   },
-  "homepage": "https://github.com/renanherdy/fly-video-producer#readme",
-  "dependencies": {
-    "fluent-ffmpeg": "^2.1.2",
-    "readline-sync": "^1.4.10"
+  "devDependencies": {
+    "capacitor-app": "file:electron",
+    "concurrently": "^5.0.0"
   }
 }
