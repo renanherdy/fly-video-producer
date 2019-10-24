@@ -1,10 +1,28 @@
-const readline = require('readline-sync');
+import React from 'react';
+import ReactDOM from 'react-dom';
 
-module.exports = function menu() {
-  const input = {};
-  input.question1 = readline.question(`digite um input `);
+'use strict';
 
+const e = React.createElement;
 
-  console.log('input');
-  console.log(input);
+class LikeButton extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { liked: false };
+  }
+
+  render() {
+    if (this.state.liked) {
+      return 'You liked this.';
+    }
+
+    return (
+      <button onClick={() => this.setState({ liked: true })}>
+        Like
+      </button>
+    );
+  }
 }
+
+const domContainer = document.querySelector('#fly-app');
+ReactDOM.render(e(LikeButton), domContainer);
