@@ -14,5 +14,5 @@ async function slice(req, res) {
 }
 
 app.listen(3001, function() {
-  console.log("Example app listening on port 3001!");
+  console.log("Fly Video Producer API listening on port 3001!");
 });
