@@ -4,27 +4,14 @@ import {
   IonPage,
   IonTitle,
   IonToolbar,
-  IonBadge,
-  IonList,
-  IonItem,
-  IonCheckbox,
-  IonLabel,
-  IonNote,
-  IonFab,
-  IonFabButton,
   IonIcon,
   IonGrid,
   IonRow,
   IonCol,
   IonCard,
   IonCardHeader,
-  IonCardSubtitle,
   IonCardTitle,
-  IonCardContent,
-  IonButton,
-  IonMenu,
-  IonRouterOutlet
-} from "@ionic/react";
+  IonCardContent} from "@ionic/react";
 import React from "react";
 import { add } from "ionicons/icons";
 import { RouteComponentProps } from "react-router";
