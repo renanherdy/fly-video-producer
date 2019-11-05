@@ -1,6 +1,7 @@
 import { IonList, IonReorderGroup } from "@ionic/react";
 import React from "react";
 import FileItem from "./FileItem";
+import { ItemReorderEventDetail } from "@ionic/core";
 
 export default class FileList extends React.Component<
   { files: Array<any>; onChange: any },
@@ -8,7 +9,7 @@ export default class FileList extends React.Component<
 > {
   constructor(props: { files: Array<any>; onChange: any }) {
     super(props);
-    this.doReorder = this.doReorder.bind(this.state);
+    this.doReorder = this.doReorder.bind(this);
     this.deleteItem = this.deleteItem.bind(this);
   }
 
@@ -17,13 +18,17 @@ export default class FileList extends React.Component<
     this.props.onChange(this.props.files);
   }
 
-  doReorder = function(this: any, event: CustomEvent) {
-    event.detail.complete(this.items);
+  doReorder = function(this: any, event: CustomEvent<ItemReorderEventDetail>) {
+    event.detail.complete(this.props.files);
+    this.props.onChange(this.props.files);
   };
   render() {
     return (
       <IonList>
-        <IonReorderGroup disabled={false} onIonItemReorder={this.doReorder}>
+        <IonReorderGroup 
+        disabled={false} 
+        onIonItemReorder={this.doReorder}
+        >
           {this.props.files.map(
             (
               file: { path: string; collapsed: boolean; hash: string },

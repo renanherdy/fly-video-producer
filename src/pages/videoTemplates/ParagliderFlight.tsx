@@ -8,17 +8,25 @@ import {
   IonToolbar,
   IonButton,
   IonCol,
-  IonRow} from "@ionic/react";
+  IonRow,
+  IonItem
+} from "@ionic/react";
 import React from "react";
 import FileList from "../../components/FileList";
+import io from "socket.io-client";
 
 class ParagliderFlight extends React.Component<
   {},
-  { listOfFiles: Array<{ path: any; hash: any }>; fileInput: any }
+  {
+    listOfFiles: Array<{ path: any; hash: any }>;
+    fileInput: any;
+    timeoutText: string;
+  }
 > {
   constructor(props: any) {
     super(props);
     this.state = {
+      timeoutText: "not started yet",
       fileInput: React.createRef(),
       listOfFiles: [
         // {
@@ -44,13 +52,29 @@ class ParagliderFlight extends React.Component<
     this.handleSubmit = this.handleSubmit.bind(this);
     this.triggerSelectBox = this.triggerSelectBox.bind(this);
     this.arrayChanged = this.arrayChanged.bind(this);
+    this.handleTimeout = this.handleTimeout.bind(this);
+    this.handleEnd = this.handleEnd.bind(this);
   }
-  arrayChanged(array: any){
+
+  handleEnd(payload: string) {
     const newState = {
       fileInput: this.state.fileInput,
-      listOfFiles: array,
-    }
-    console.log('onChange');
+      listOfFiles: this.state.listOfFiles,
+      timeoutText: payload
+    };
+
+    this.setState(newState);
+  }
+
+  handleTimeout() {
+  }
+
+  arrayChanged(array: any) {
+    const newState = {
+      fileInput: this.state.fileInput,
+      listOfFiles: array
+    };
+    console.log("onChange");
     console.log(array);
     this.setState(newState);
   }
@@ -68,18 +92,16 @@ class ParagliderFlight extends React.Component<
 
   handleSubmit() {
     const listOfPaths = this.state.listOfFiles;
-    var myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    var req = {
-      method: "POST",
-      body: JSON.stringify({
-        listOfPaths
-      }),
-      headers: myHeaders
+    const socket = io();
+    socket.emit("start", listOfPaths);
+    socket.on("end", this.handleEnd);
+
+    const newState = {
+      fileInput: this.state.fileInput,
+      listOfFiles: this.state.listOfFiles,
+      timeoutText: "Processing..."
     };
-    console.log("auto slice");
-    console.log(req);
-    fetch("http://localhost:3000/api/autoSlice", req);
+    this.setState(newState);
   }
 
   handleChange(event: any) {
@@ -92,7 +114,7 @@ class ParagliderFlight extends React.Component<
         console.log(
           "impossible to compile via browser, please download electron version to produce this video."
         );
-        listOfPaths.push({ path: file.name , hash});
+        listOfPaths.push({ path: file.name, hash });
         console.log(file);
         continue;
       }
@@ -101,7 +123,7 @@ class ParagliderFlight extends React.Component<
     const newState = {
       listOfFiles: this.state.listOfFiles.concat(listOfPaths)
     };
-    console.log('newState');
+    console.log("newState");
     console.log(newState);
     this.setState(newState);
   }
@@ -138,7 +160,10 @@ class ParagliderFlight extends React.Component<
           </IonRow>
           <IonRow>
             <IonCol size="12">
-              <FileList files={this.state.listOfFiles} onChange={this.arrayChanged}/>
+              <FileList
+                files={this.state.listOfFiles}
+                onChange={this.arrayChanged}
+              />
             </IonCol>
           </IonRow>
           <IonRow>
@@ -152,6 +177,11 @@ class ParagliderFlight extends React.Component<
               >
                 Start Producing
               </IonButton>
+            </IonCol>
+          </IonRow>
+          <IonRow>
+            <IonCol size="12">
+              <IonItem>{this.state.timeoutText}</IonItem>
             </IonCol>
           </IonRow>
         </IonContent>
