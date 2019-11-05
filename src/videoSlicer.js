@@ -22,8 +22,10 @@ module.exports = async function autoSlice(inputFiles) {
     fs.mkdirSync(outDir);
   }
   const mergedFilePath = path.join(outDir, "fly-video.mp4");
-  await renderToFile(slicingData, mergedFilePath, outDir);
-}
+  const resp = await renderToFile(slicingData, mergedFilePath, outDir);
+  console.log("merge ok");
+  return resp;
+};
 async function renderToFile(slicingData, mergedFilePath, outDir) {
   const outputFiles = [];
   const inputPromises = [];
@@ -50,7 +52,7 @@ async function renderToFile(slicingData, mergedFilePath, outDir) {
         })
     );
   }
-  Promise.all(inputPromises)
+  return Promise.all(inputPromises)
     .then(data => {
       console.log("all input files processed for slicing");
       console.log("data");
@@ -59,6 +61,9 @@ async function renderToFile(slicingData, mergedFilePath, outDir) {
     })
     .then(data => {
       return mergeOutputs(data, mergedFilePath, outDir);
+    })
+    .then(data =>{
+      return data;
     })
     .catch(err => {
       console.log("err");
@@ -70,21 +75,41 @@ async function mergeOutputs(data, mergedFilePath, outDir) {
     const ffmpegCommand = ffmpeg();
     console.log("data");
     console.log(data);
+    let fileContent = "";
     for (let group of data) {
       for (let file of group) {
-        ffmpegCommand.addInput(file.outputPath);
+        fileContent = fileContent.concat("file '", file.outputPath, "'\n");
       }
     }
-    ffmpegCommand
-      .mergeToFile(mergedFilePath, outDir)
-      .on("end", () => {
-        console.log("renderização concluída");
-        resolve(mergedFilePath);
-      })
-      .on("error", err => {
-        console.log(err);
-        reject(err);
-      });
+    const filenamesPath = path.join(outDir, "filenames.txt");
+    fs.writeFileSync(filenamesPath, fileContent);
+    const child_process = require("child_process");
+
+    child_process.execSync(
+      "ffmpeg -y -f concat -safe 0 -i " +
+        filenamesPath +
+        " -c copy " +
+        mergedFilePath
+    );
+    // ffmpegCommand
+    //   // .addOption("-f", "concat")
+    //   // .addOption("-safe", "0")
+    //   .addOption("-i", "concat:"+filenamesPath)
+    //   .addOption("-c", "copy")
+    //   .on('start', (commandLine)=>{
+
+    //     console.log('ffmpegCommand');
+    //     console.log(commandLine);
+    //   })
+    //   .saveToFile(mergedFilePath)
+    //   .on("end", () => {
+    console.log("renderização concluída");
+    resolve(mergedFilePath);
+    //   })
+    //   .on("error", err => {
+    //     console.log(err);
+    //     reject(err);
+    //   });
   });
 }
 
@@ -96,9 +121,7 @@ async function saveSlice(inputFile, slice) {
     ffmpegCommand
       .setStartTime(slice.start)
       .setDuration(inputFile.slices.duration)
-      .withVideoCodec("libx264")
-      .withVideoBitrate("4000k")
-      .withSize("1920x1080")
+      .addOption("-c", "copy")
       .saveToFile(slice.outputPath)
       .on("end", () => {
         console.log("slice");
