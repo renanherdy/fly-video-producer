@@ -122,6 +122,7 @@ async function saveSlice(inputFile, slice) {
       .setStartTime(slice.start)
       .setDuration(inputFile.slices.duration) 
       .addOption("-c", "copy")
+      .addOption("-avoid_negative_ts", "make_zero") /* solves stuttering problem on output videos */
       .saveToFile(slice.outputPath)
       .on("end", () => {
         console.log("slice");
