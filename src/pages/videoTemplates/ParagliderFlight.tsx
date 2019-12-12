@@ -52,7 +52,6 @@ class ParagliderFlight extends React.Component<
     this.handleSubmit = this.handleSubmit.bind(this);
     this.triggerSelectBox = this.triggerSelectBox.bind(this);
     this.arrayChanged = this.arrayChanged.bind(this);
-    this.handleTimeout = this.handleTimeout.bind(this);
     this.handleEnd = this.handleEnd.bind(this);
   }
 
@@ -66,8 +65,6 @@ class ParagliderFlight extends React.Component<
     this.setState(newState);
   }
 
-  handleTimeout() {
-  }
 
   arrayChanged(array: any) {
     const newState = {
