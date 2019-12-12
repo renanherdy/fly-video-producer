@@ -6,7 +6,7 @@ const path = require("path");
 // const inDir = './source-files/';
 // const mergedFilePath = path.path.join(outDir, 'fly-video.mp4');
 const sliceMaxLength = 6;
-const sliceMinLength = 3;
+const sliceMinLength = 4;
 const maxSliceQty = 8;
 
 module.exports = async function autoSlice(inputFiles) {
@@ -120,7 +120,7 @@ async function saveSlice(inputFile, slice) {
     const ffmpegCommand = ffmpeg(inputFile.path);
     ffmpegCommand
       .setStartTime(slice.start)
-      .setDuration(inputFile.slices.duration)
+      .setDuration(inputFile.slices.duration) 
       .addOption("-c", "copy")
       .saveToFile(slice.outputPath)
       .on("end", () => {
@@ -165,11 +165,11 @@ async function calculateSlicingData(inputFiles) {
           } else if (duration <= 5 * sliceMinLength) {
             inputFile.slices.qty = 3;
             inputFile.slices.duration =
-              sliceMaxLength - (sliceMaxLength - sliceMinLength) / 3;
+              sliceMaxLength - (sliceMaxLength - sliceMinLength) / 2;
           } else if (duration <= 10 * sliceMinLength) {
-            inputFile.slices.qty = 5;
+            inputFile.slices.qty = 4;
             inputFile.slices.duration =
-              sliceMaxLength - (sliceMaxLength - sliceMinLength) / 4;
+              sliceMaxLength - (sliceMaxLength - sliceMinLength) / 2;
           } else if (duration <= 20 * sliceMinLength) {
             inputFile.slices.qty = 7;
             inputFile.slices.duration =

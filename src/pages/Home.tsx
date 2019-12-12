@@ -11,9 +11,10 @@ import {
   IonCard,
   IonCardHeader,
   IonCardTitle,
-  IonCardContent} from "@ionic/react";
+  IonCardContent
+} from "@ionic/react";
 import React from "react";
-import { add } from "ionicons/icons";
+import { add, arrowRoundUp } from "ionicons/icons";
 import { RouteComponentProps } from "react-router";
 
 const Home: React.FC<RouteComponentProps> = props => {
@@ -28,13 +29,24 @@ const Home: React.FC<RouteComponentProps> = props => {
         <IonGrid>
           <IonRow>
             <IonCol size="6">
-              <IonCard button onClick={() => props.history.push('/new')}>
+              <IonCard button onClick={() => props.history.push("/new")}>
                 <IonCardHeader>
                   <IonCardTitle>New Video</IonCardTitle>
                 </IonCardHeader>
 
-                <IonCardContent >
-                    <IonIcon icon={add} size="large"></IonIcon>
+                <IonCardContent>
+                  <IonIcon icon={add} size="large"></IonIcon>
+                </IonCardContent>
+              </IonCard>
+            </IonCol>
+            <IonCol size="6">
+              <IonCard button onClick={() => props.history.push("/load")}>
+                <IonCardHeader>
+                  <IonCardTitle>Load Production</IonCardTitle>
+                </IonCardHeader>
+
+                <IonCardContent>
+                  <IonIcon icon={arrowRoundUp} size="large"></IonIcon>
                 </IonCardContent>
               </IonCard>
             </IonCol>
