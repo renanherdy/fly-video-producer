@@ -1,37 +1,36 @@
 {
-  "source": {
-    "videoFiles": [
-      "..."
-    ],
-    "audioFiles": [
-      "..."
-    ],
-    "imageFiles": [
-      "..."
-    ],
-    "trackFiles": [
-      "..."
-    ]
-  },
-  "output": {
-    "layers": [
-      {
-        "layer": [
+  "projectName": "String",
+  "savedPath": "String",
+  "instructionGroups": [
+    {
+      "instruction": {
+        "class": "String",
+        "function": "String",
+        "parameters": [
           {
-            "composition": {
-              "source": {
-                "effects": {
-                  "...": "..."
-                }
-              },
-              "output": {
-                "start": "int",
-                "end": "int"
-              }
-            }
+            "name": "String",
+            "value": "Object"
+          }
+        ],
+        "savedOutputs": [
+          {
+            "filePath": "String",
+            "reuse": "boolean"
           }
         ]
-      }
-    ]
-  }
+      },
+      "savedOutputs": [
+        {
+          "filePath": "String",
+          "reuse": "boolean"
+        }
+      ]
+    }
+  ],
+  "savedOutputs": [
+    {
+      "filePath": "String",
+      "reuse": "boolean"
+    }
+  ]
 }

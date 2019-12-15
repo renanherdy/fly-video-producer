@@ -72,7 +72,6 @@ async function renderToFile(slicingData, mergedFilePath, outDir) {
 }
 async function mergeOutputs(data, mergedFilePath, outDir) {
   return new Promise((resolve, reject) => {
-    const ffmpegCommand = ffmpeg();
     console.log("data");
     console.log(data);
     let fileContent = "";
@@ -84,13 +83,14 @@ async function mergeOutputs(data, mergedFilePath, outDir) {
     const filenamesPath = path.join(outDir, "filenames.txt");
     fs.writeFileSync(filenamesPath, fileContent);
     const child_process = require("child_process");
-
+    
     child_process.execSync(
       "ffmpeg -y -f concat -safe 0 -i " +
-        filenamesPath +
-        " -c copy " +
-        mergedFilePath
-    );
+      filenamesPath +
+      " -c copy " +
+      mergedFilePath
+      );
+    // const ffmpegCommand = ffmpeg();
     // ffmpegCommand
     //   // .addOption("-f", "concat")
     //   // .addOption("-safe", "0")

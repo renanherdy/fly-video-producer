@@ -29,9 +29,9 @@ const Home: React.FC<RouteComponentProps> = props => {
         <IonGrid>
           <IonRow>
             <IonCol size="6">
-              <IonCard button onClick={() => props.history.push("/new")}>
+              <IonCard button onClick={() => props.history.push("/production")}>
                 <IonCardHeader>
-                  <IonCardTitle>New Video</IonCardTitle>
+                  <IonCardTitle>New Production</IonCardTitle>
                 </IonCardHeader>
 
                 <IonCardContent>
