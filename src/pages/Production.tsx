@@ -20,13 +20,18 @@ import {
   IonButton
 } from "@ionic/react";
 import React from "react";
-import io from "socket.io-client";
+// import io from "socket.io-client";
+import {
+  getEmptyProject,
+  loadProjectFromLocalStorage,
+  saveProjectToLocalStorage
+} from "../components/StorageManager";
 
 class Production extends React.Component<
   {},
   {
     project: {
-      projectName: string|any;
+      projectName: string | any;
       savedPath: string;
       instructionGroups:
         | [
@@ -69,41 +74,57 @@ class Production extends React.Component<
     fileInput: any;
   }
 > {
+  projectNameInput: any;
   constructor(props: any) {
     super(props);
     this.state = {
       fileInput: React.createRef(),
       textMessage: "",
-      project: {
-        projectName: "",
-        savedPath: "",
-        instructionGroups: [],
-        savedOutputs: []
-      }
+      project: getEmptyProject()
     };
-    // this.handleChange = this.handleChange.bind(this);
-    // this.handleSubmit = this.handleSubmit.bind(this);
+    this.projectNameInput = React.createRef();
     this.triggerSelectBox = this.triggerSelectBox.bind(this);
     this.handleFileChange = this.handleFileChange.bind(this);
     this.newProject = this.newProject.bind(this);
     this.downloadProject = this.downloadProject.bind(this);
-    // this.handleEnd = this.handleEnd.bind(this);
   }
 
-  componentDidMount() {}
-
-  newProject() {
-    const project = this.state.project;
-    const socket = io();
-    socket.emit("newProduction", project);
-    socket.on("newProductionSaved", this.handleProductionSaved);
+  componentDidMount() {
+    const project = loadProjectFromLocalStorage();
+    console.log("loaded project", project);
 
     const newState = {
       fileInput: this.state.fileInput,
-      project: this.state.project,
-      textMessage: "Saving new project..."
+      textMessage: this.state.textMessage,
+      project: project
     };
     this.setState(newState);
+  }
+
+  componentWillUnmount() {
+    this.logAndSave();
+  }
+
+  logAndSave(){
+    console.log("before save project storage", loadProjectFromLocalStorage());
+    console.log("before save project state", this.state.project);
+    saveProjectToLocalStorage(this.state.project);
+    console.log("after save project storage", loadProjectFromLocalStorage());
+    console.log("after save project state", this.state.project);
+  }
+
+  newProject() {
+    this.setState(state => {
+      var newState = { project: { ...state.project } };
+      console.log(
+        "this.projectNameInput.current.value",
+        this.projectNameInput.current.value
+      );
+      newState.project.projectName = this.projectNameInput.current.value;
+      return newState;
+    }, ()=>{
+      this.componentWillUnmount();
+    });
   }
 
   handleProductionSaved(data: any) {
@@ -123,8 +144,9 @@ class Production extends React.Component<
   }
   handleFileChange(event: any) {
     const file = event.target.files[0];
-    this.state.project.savedPath = file.path;
-    this.setState(this.state);
+    var newState = this.state;
+    newState.project.savedPath = file.path;
+    this.setState(newState);
   }
   downloadProject() {
     var a = document.createElement("a");
@@ -160,6 +182,7 @@ class Production extends React.Component<
                 placeholder="Awesome project"
                 autofocus
                 value={this.state.project.projectName}
+                ref={this.projectNameInput}
               />
             </IonCol>
             <IonCol>

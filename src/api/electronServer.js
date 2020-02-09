@@ -1,13 +1,28 @@
 var express = require("express");
-var autoSlice = require("./workers/videoSlicer");
+var videoSlicer = require("./workers/videoSlicer");
+var videoInfo = require("./workers/videoInfo");
 var app = express();
 var http = require("http").createServer(app);
 var io = require("socket.io")(http);
-const saveProject = require('./coreInstructions/saveProject')
 
 app.use(express.json());
 
 io.on("connection", function(socket) {
+  socket.on("start-getVideoDuration", async function(payload) {
+    console.log("start getVideoDuration");
+    console.log("payload", payload);
+    const data = await videoInfo.getVideoDuration(payload);
+    data.hash = payload.hash;
+    console.log("end emitted");
+    socket.emit("end-getVideoDuration", data);
+  });
+  socket.on("start-cutIntoSlices", async function(payload) {
+    console.log("start cutIntoSlices");
+    console.log("payload", payload);
+    const resultPath = await videoSlicer.cutIntoSlices(payload);
+    console.log("end emitted");
+    socket.emit("end-cutIntoSlices", "Video cutten Into Slices. You can play!\n" + resultPath);
+  });
   socket.on("start", async function(files) {
     console.log("start 1 message received on server");
     console.log(files);
@@ -15,17 +30,16 @@ io.on("connection", function(socket) {
     console.log("end emitted");
     socket.emit("end", "Video produced. You can play!\n" + resultPath);
   });
-  socket.on("newProduction", async function(project){
-    console.log("starting save process for new project:" , project.projectName);
-    const result = await saveProject(project);
-    console.log("project saved, go on!");
-    socket.emit("newProductionSaved", "project saved, go on!\n" + result.savedPath);
-
-  })
-  socket.on("disconnect", function() {
-    console.log("user disconnected");
+  socket.on("videoInfoReq", async function(videoFilePath) {
+    console.log("getting ffProbe data");
+    getFFProbeData(videoFilePath)
+    .then((data)=>{
+      console.log("ffprobe data done: ", data);
+      socket.emit("videoInfoResp", data);
+    });
   });
-  console.log("connect works");
+  socket.on("disconnect", function() {
+  });
 });
 
 http.listen(3001, function() {
