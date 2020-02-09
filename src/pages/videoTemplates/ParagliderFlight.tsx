@@ -328,7 +328,7 @@ class ParagliderFlight extends React.Component<
                 onClick={this.handleSubmit}
                 disabled={this.state.listOfFiles.length === 0}
               >
-                Start Producing
+                Add to Production
               </IonButton>
             </IonCol>
           </IonRow>

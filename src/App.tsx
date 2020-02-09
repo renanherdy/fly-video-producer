@@ -31,6 +31,7 @@ const App: React.FC = () => (
       <IonRouterOutlet>
         <Route path="/home" component={Home} exact={true} />
         <Route path="/production" component={Production} exact={true} />
+        <Route path="/load" component={Production} exact={true} />
         <Route path="/videoTemplates/ParagliderFlight" component={ParagliderFlight} exact={true} />
         <Route exact path="/" render={() => <Redirect to="/home" />} />
       </IonRouterOutlet>

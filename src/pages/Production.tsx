@@ -33,6 +33,18 @@ class Production extends React.Component<
     project: {
       projectName: string | any;
       savedPath: string;
+      scenes: [
+        {
+          name: string,
+          type: string,
+          inputs: any,
+          event: {
+            emittedEvent: string,
+            payload: any,
+            responseEvent: string
+          }
+        }
+      ] | any,
       instructionGroups:
         | [
             {
@@ -105,7 +117,7 @@ class Production extends React.Component<
     this.logAndSave();
   }
 
-  logAndSave(){
+  logAndSave() {
     console.log("before save project storage", loadProjectFromLocalStorage());
     console.log("before save project state", this.state.project);
     saveProjectToLocalStorage(this.state.project);
@@ -114,17 +126,20 @@ class Production extends React.Component<
   }
 
   newProject() {
-    this.setState(state => {
-      var newState = { project: { ...state.project } };
-      console.log(
-        "this.projectNameInput.current.value",
-        this.projectNameInput.current.value
-      );
-      newState.project.projectName = this.projectNameInput.current.value;
-      return newState;
-    }, ()=>{
-      this.componentWillUnmount();
-    });
+    this.setState(
+      state => {
+        var newState = { project: { ...state.project } };
+        console.log(
+          "this.projectNameInput.current.value",
+          this.projectNameInput.current.value
+        );
+        newState.project.projectName = this.projectNameInput.current.value;
+        return newState;
+      },
+      () => {
+        this.componentWillUnmount();
+      }
+    );
   }
 
   handleProductionSaved(data: any) {
@@ -175,7 +190,7 @@ class Production extends React.Component<
           </IonToolbar>
         </IonHeader>
         <IonContent>
-          <IonRow>
+          {/* <IonRow>
             <IonCol>
               <IonInput
                 type="text"
@@ -220,7 +235,7 @@ class Production extends React.Component<
                 </IonCol>
               </IonRow>
             </IonCol>
-          </IonRow>
+          </IonRow> */}
           <IonList>
             <IonListHeader>
               <IonLabel>Edit scene</IonLabel>
