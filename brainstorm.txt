@@ -1,0 +1,22 @@
+-the app will produce videos from determinated source files that i choose
+-i want to have some predefined templates that run on my files and give me a worked result
+-i can mix some templates on same production, making a rich production
+-i want sometimes to pause my production to continue from this state later
+-i want to enter the app and see paused projects
+-the app can give its shots of production without asking me, so i can start from a pre-worked job
+-the app will ask me what the video need to be better
+-i want to have full control on each point of edition and then come back to auto thing
+-my video editor may include gps tracklog files so it can make animations from it
+-my video editor can include generated information from the gps files
+-i want to enter the app and see recent projects
+-the video editor has to remember what it did on made productions
+ -it will remember it on a set of instructions
+ -we need to define some kinds of instructions because they have specific attributes
+  -a kind of instruction will be the ffmpeg command
+  -another kind is the template generated command
+  -in the end all kinds will turn to ffmpeg command, gpsbabel, imagemagick. so we can have recursive instructions
+  -to simplify, we can pass on instructions, simple class name, function name, and an array of parameters
+ -another valuable thing to have is a group of instructions, this way, the project will be cleaner and organized
+-so it is, a json with info about the project, and a list of groups of instructions
+-this json can list the made output files, and give the chance to the user of skipping the step of production, utilizing previous made outputs, that are just files
+-a instruction group can be converted to a template by the user

@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path')
-const { autoSlice } = require('./videoSlicer');
+const { autoSlice } = require('./api/workers/videoSlicer');
 
 let mainWindow
 app.on('ready', () => {
