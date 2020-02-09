@@ -1,21 +1,33 @@
+function getObjectFromStorage(itemName: string) {
+  const itemString = String(localStorage.getItem(itemName));
+  var item;
+  if (itemString !== "" && itemString !== "null") {
+    item = JSON.parse(itemString);
+  }
+  return item;
+}
+
 export function getEmptyProject() {
   return {
     projectName: "",
     savedPath: "",
     instructionGroups: [],
-    savedOutputs: []
+    savedOutputs: [],
+    scenes: []
   };
 }
 
 export function loadProjectFromLocalStorage() {
-  const projectString = String(localStorage.getItem("project"));
-  var project = getEmptyProject();
-  if (projectString !== "" && projectString !== "null") {
-    project = JSON.parse(projectString);
+  const loadedProject = getObjectFromStorage("project");
+  var result;
+  if (loadedProject) {
+    result = loadedProject;
+  } else {
+    result = getEmptyProject();
   }
-  return project;
+  return result;
 }
 
-export function saveProjectToLocalStorage(project: any ) {
+export function saveProjectToLocalStorage(project: any) {
   localStorage.setItem("project", JSON.stringify(project));
 }
