@@ -19,9 +19,20 @@ io.on("connection", function(socket) {
   socket.on("start-cutIntoSlices", async function(payload) {
     console.log("start cutIntoSlices");
     console.log("payload", payload);
-    const resultPath = await videoSlicer.cutIntoSlices(payload);
-    console.log("end emitted");
-    socket.emit("end-cutIntoSlices", "Video cutten Into Slices. You can play!\n" + resultPath);
+    const result = await videoSlicer.cutIntoSlices(payload);
+    const {resultPath, outSceneName} = result
+    console.log("end-cutIntoSlices-"+outSceneName);
+    socket.emit("end-cutIntoSlices-"+outSceneName, result);
+  });
+  socket.on("start-mergeVideos", async function(payload) {
+    console.log("start mergeVideos");
+    console.log("payload", payload);
+    console.log("payload[0].event.payload", payload[0].event.payload);
+    const outDir = payload[0].event.payload.outDirPath;
+    const result = await videoSlicer.mergeOutputs ([payload], outDir+'/fly-video.mp4',outDir, 'fly-video' );
+    const {resultPath, outSceneName} = result
+    console.log("end-mergeVideos-"+outSceneName);
+    socket.emit("end-mergeVideos", result);
   });
   socket.on("start", async function(files) {
     console.log("start 1 message received on server");

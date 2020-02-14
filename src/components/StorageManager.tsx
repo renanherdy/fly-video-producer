@@ -19,15 +19,24 @@ export function getEmptyProject() {
 
 export function loadProjectFromLocalStorage() {
   const loadedProject = getObjectFromStorage("project");
-  var result;
   if (loadedProject) {
-    result = loadedProject;
+    if (!Array.isArray(loadedProject.scenes)) {
+      loadedProject.scenes = [];
+    }
+    return loadedProject;
   } else {
-    result = getEmptyProject();
+    return getEmptyProject();
   }
-  return result;
 }
 
 export function saveProjectToLocalStorage(project: any) {
   localStorage.setItem("project", JSON.stringify(project));
+}
+
+export function getCurrentScene() {
+  return getObjectFromStorage("currentScene");
+}
+
+export function saveCurrentSceneToLocalStorage(currentScene: any) {
+  localStorage.setItem("currentScene", JSON.stringify(currentScene));
 }

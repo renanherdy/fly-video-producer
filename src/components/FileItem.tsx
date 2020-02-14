@@ -12,6 +12,7 @@ import {
   IonSpinner
 } from "@ionic/react";
 import React from "react";
+import { arrowDropdown, arrowDropup } from "ionicons/icons";
 export default class FileItem extends React.Component<
   {
     file: {
@@ -84,7 +85,7 @@ export default class FileItem extends React.Component<
               <IonItem>
                 {this.props.file.path}
                 <IonReorder slot="start" />
-                <IonSpinner slot="end" hidden={this.props.file.loaded}/>
+                <IonSpinner slot="end" hidden={this.props.file.loaded} />
                 <IonButton
                   slot="end"
                   color="danger"
@@ -96,7 +97,11 @@ export default class FileItem extends React.Component<
                   <IonIcon name="close-circle" />
                 </IonButton>
                 <IonButton slot="end" onClick={this.expandItem}>
-                  <IonIcon name={(this.state.file.collapsed)?"arrow-dropdown":"arrow-dropup"} />
+                  <IonIcon
+                    icon={
+                      this.state.file.collapsed ? arrowDropdown : arrowDropup
+                    }
+                  />
                 </IonButton>
               </IonItem>
             </IonCol>
@@ -105,7 +110,6 @@ export default class FileItem extends React.Component<
             <IonCol>
               <IonRow>
                 <IonCol size="3">
-                  <IonItem>
                     <IonLabel color="secondary" position="stacked">
                       Target duration (s): {this.props.file.targetDuration}
                     </IonLabel>
@@ -116,7 +120,6 @@ export default class FileItem extends React.Component<
                       onIonChange={this.changeTargetDurationValue}
                       value={String(this.props.file.targetDuration)}
                     ></IonInput>
-                  </IonItem>
                 </IonCol>
                 <IonCol size="9">
                   <IonRange
@@ -135,7 +138,6 @@ export default class FileItem extends React.Component<
               </IonRow>
               <IonRow>
                 <IonCol size="3">
-                  <IonItem>
                     <IonLabel color="secondary" position="stacked">
                       Number of slices: {this.props.file.numberOfSlices}
                     </IonLabel>
@@ -146,7 +148,6 @@ export default class FileItem extends React.Component<
                       onIonChange={this.changeNumberOfSlicesValue}
                       value={String(this.props.file.numberOfSlices)}
                     ></IonInput>
-                  </IonItem>
                 </IonCol>
                 <IonCol size="9">
                   <IonLabel slot="start">Number of slices</IonLabel>

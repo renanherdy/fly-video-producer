@@ -14,37 +14,47 @@ import {
   IonLabel,
   IonCardHeader,
   IonCardTitle,
-  IonInput,
-  IonRow,
-  IonCol,
-  IonButton
+  IonReorderGroup,
+  IonButton,
+  IonSpinner,
+  IonIcon,
 } from "@ionic/react";
 import React from "react";
-// import io from "socket.io-client";
+import io from "socket.io-client";
 import {
   getEmptyProject,
   loadProjectFromLocalStorage,
-  saveProjectToLocalStorage
+  saveProjectToLocalStorage,
+  saveCurrentSceneToLocalStorage
 } from "../components/StorageManager";
+import { ItemReorderEventDetail } from "@ionic/core";
+import Scene from "./Scene";
+import { playCircle } from "ionicons/icons";
 
 class Production extends React.Component<
-  {},
+  { history: any; location: any },
   {
+    producedVideoLocation: string;
+    videoProduced: boolean;
+    producingVideo: boolean;
+    pendingScenes: any;
     project: {
       projectName: string | any;
       savedPath: string;
-      scenes: [
-        {
-          name: string,
-          type: string,
-          inputs: any,
-          event: {
-            emittedEvent: string,
-            payload: any,
-            responseEvent: string
-          }
-        }
-      ] | any,
+      scenes:
+        | [
+            {
+              name: string;
+              type: string;
+              inputs: any;
+              event: {
+                emittedEvent: string;
+                payload: any;
+                responseEvent: string;
+              };
+            }
+          ]
+        | any;
       instructionGroups:
         | [
             {
@@ -90,6 +100,10 @@ class Production extends React.Component<
   constructor(props: any) {
     super(props);
     this.state = {
+      producedVideoLocation: "",
+      videoProduced: false,
+      producingVideo: false,
+      pendingScenes: [],
       fileInput: React.createRef(),
       textMessage: "",
       project: getEmptyProject()
@@ -99,9 +113,26 @@ class Production extends React.Component<
     this.handleFileChange = this.handleFileChange.bind(this);
     this.newProject = this.newProject.bind(this);
     this.downloadProject = this.downloadProject.bind(this);
+    this.loadScene = this.loadScene.bind(this);
+    this.deleteScene = this.deleteScene.bind(this);
+    this.addParagliderFlight = this.addParagliderFlight.bind(this);
+    this.doReorder = this.doReorder.bind(this);
+    this.handleEnd = this.handleEnd.bind(this);
+    this.produceVideo = this.produceVideo.bind(this);
+    this.resolvePendingScene = this.resolvePendingScene.bind(this);
+    this.mergeAllScenes = this.mergeAllScenes.bind(this);
+    this.leavingPageActions = this.leavingPageActions.bind(this);
+    this.enteringPageActions = this.enteringPageActions.bind(this);
+    this.verifyAndMerge = this.verifyAndMerge.bind(this);
+    this.playVideo = this.playVideo.bind(this);
   }
 
   componentDidMount() {
+    this.enteringPageActions();
+  }
+
+  enteringPageActions() {
+    console.log("mount");
     const project = loadProjectFromLocalStorage();
     console.log("loaded project", project);
 
@@ -111,35 +142,30 @@ class Production extends React.Component<
       project: project
     };
     this.setState(newState);
+    this.props.history.block(this.leavingPageActions);
   }
 
-  componentWillUnmount() {
-    this.logAndSave();
+  leavingPageActions(targetLocation: any) {
+    console.log("leaving page, going to", targetLocation);
+    return true;
   }
 
-  logAndSave() {
-    console.log("before save project storage", loadProjectFromLocalStorage());
-    console.log("before save project state", this.state.project);
-    saveProjectToLocalStorage(this.state.project);
-    console.log("after save project storage", loadProjectFromLocalStorage());
-    console.log("after save project state", this.state.project);
+  componentDidUpdate(prevProps: any, prevState: any) {
+    const locationChanged = prevProps.location !== this.props.location;
+    const project = loadProjectFromLocalStorage();
+    if (locationChanged) {
+      this.setState(() => {
+        return { project };
+      });
+    }
   }
 
   newProject() {
-    this.setState(
-      state => {
-        var newState = { project: { ...state.project } };
-        console.log(
-          "this.projectNameInput.current.value",
-          this.projectNameInput.current.value
-        );
-        newState.project.projectName = this.projectNameInput.current.value;
-        return newState;
-      },
-      () => {
-        this.componentWillUnmount();
-      }
-    );
+    this.setState(state => {
+      var newState = { project: { ...state.project } };
+      newState.project.projectName = this.projectNameInput.current.value;
+      return newState;
+    }, this.enteringPageActions);
   }
 
   handleProductionSaved(data: any) {
@@ -176,6 +202,114 @@ class Production extends React.Component<
     a.download = fileName;
     a.click();
     window.URL.revokeObjectURL(url);
+  }
+  doReorder(this: any, event: CustomEvent<ItemReorderEventDetail>) {
+    const project = this.state.project;
+    event.detail.complete(project.scenes);
+    saveProjectToLocalStorage(project);
+    this.setState({ project });
+  }
+  loadScene(scene: any) {
+    saveCurrentSceneToLocalStorage(scene);
+    this.props.history.push("/videoTemplates/ParagliderFlight");
+  }
+  deleteScene(scene: any) {
+    this.setState(state => {
+      const sceneIndex = this.findSceneIndex(state.project.scenes, scene);
+      const project = state.project;
+      project.scenes.splice(sceneIndex, 1);
+      saveProjectToLocalStorage(project);
+      return {
+        project
+      };
+    });
+  }
+
+  addParagliderFlight() {
+    saveCurrentSceneToLocalStorage({});
+    this.props.history.push("/videoTemplates/ParagliderFlight");
+  }
+
+  handleEnd(payload: { outSceneName: string; resultPath: string }) {
+    const scene = {
+      name: payload.outSceneName,
+      resultPath: payload.resultPath
+    };
+    if (
+      Array.isArray(this.state.pendingScenes) &&
+      this.state.pendingScenes.length > 0
+    ) {
+      this.resolvePendingScene(scene, this.verifyAndMerge);
+    }
+  }
+  verifyAndMerge() {
+    console.log(
+      "this.state.pendingScenes.length",
+      this.state.pendingScenes.length
+    );
+    if (this.state.pendingScenes.length === 0) {
+      this.mergeAllScenes();
+    }
+  }
+  findSceneIndex(array: any[], scene: { name: string }) {
+    return array.findIndex((item: any) => {
+      return item.name === scene.name;
+    });
+  }
+  mergeAllScenes() {
+    const socket = io();
+    console.log("merge all scenes ", this.state.project.scenes);
+    socket.emit("start-mergeVideos", this.state.project.scenes);
+    socket.on("end-mergeVideos", (payload: any) => {
+      socket.close();
+      this.setState({
+        producingVideo: false,
+        videoProduced: true,
+        producedVideoLocation: payload.resultPath
+      });
+      console.log("totally merged on: ", payload);
+    });
+  }
+
+  resolvePendingScene(scene: any, callback: VoidFunction) {
+    this.setState(state => {
+      const project = state.project;
+      const pendingScenes = state.pendingScenes;
+      const originalSceneIndex = this.findSceneIndex(project.scenes, scene);
+      const sceneIndex = this.findSceneIndex(state.pendingScenes, scene);
+      pendingScenes.splice(sceneIndex, 1);
+      project.scenes[originalSceneIndex].outputPath = scene.resultPath;
+      return {
+        pendingScenes,
+        project
+      };
+    }, callback);
+  }
+
+  produceVideo() {
+    this.setState({ producingVideo: true, videoProduced: false });
+    const listOfScenes = this.state.project.scenes;
+    const pendingScenes = [];
+    for (let scene of listOfScenes) {
+      scene.event.payload.outSceneName = scene.name;
+      pendingScenes.push(scene);
+      const socket = io();
+      socket.emit("start-cutIntoSlices", scene.event.payload);
+      socket.on(
+        "end-cutIntoSlices-" + scene.event.payload.outSceneName,
+        (payload: any) => {
+          socket.close();
+          this.handleEnd(payload);
+        }
+      );
+    }
+    this.setState({ pendingScenes });
+  }
+  playVideo() {
+    console.log(
+      "this.state.videoProducedLocation",
+      this.state.producedVideoLocation
+    );
   }
 
   render() {
@@ -219,6 +353,7 @@ class Production extends React.Component<
               <IonButton expand="full" size="large" onClick={this.newProject}>
                 Start Project
               </IonButton>
+                <IonSpinner slot="end" hidden={this.props.file.loaded} />
             </IonCol>
             <IonCol>
               <IonRow>
@@ -238,19 +373,22 @@ class Production extends React.Component<
           </IonRow> */}
           <IonList>
             <IonListHeader>
-              <IonLabel>Edit scene</IonLabel>
+              <IonLabel>Edit scenes</IonLabel>
             </IonListHeader>
-            <IonItem>
-              <IonCard button routerLink="/videoTemplates/ParagliderFlight">
-                <IonCardHeader>
-                  <IonCardTitle>Paraglider Flight</IonCardTitle>
-                </IonCardHeader>
-                <IonCardContent>
-                  This template will cut your video sources to slices, producing
-                  a short preview of the whole recorded videos
-                </IonCardContent>
-              </IonCard>
-            </IonItem>
+            <IonReorderGroup disabled={false} onIonItemReorder={this.doReorder}>
+              {this.state.project.scenes.map(
+                (item: { name: string; type: string }) => {
+                  return (
+                    <Scene
+                      key={item.name}
+                      deleteScene={this.deleteScene}
+                      loadScene={this.loadScene}
+                      scene={item}
+                    ></Scene>
+                  );
+                }
+              )}
+            </IonReorderGroup>
           </IonList>
         </IonContent>
         <IonCard>
@@ -266,7 +404,7 @@ class Production extends React.Component<
               <IonLabel>Add Template to Production</IonLabel>
             </IonListHeader>
             <IonItem>
-              <IonCard button routerLink="/videoTemplates/ParagliderFlight">
+              <IonCard button onClick={this.addParagliderFlight}>
                 <IonCardHeader>
                   <IonCardTitle>Paraglider Flight</IonCardTitle>
                 </IonCardHeader>
@@ -277,6 +415,20 @@ class Production extends React.Component<
               </IonCard>
             </IonItem>
           </IonList>
+          <IonButton
+            onClick={this.produceVideo}
+            disabled={this.state.producingVideo}
+          >
+            Produce Fly Movie!
+          </IonButton>
+          <IonButton
+            onClick={this.playVideo}
+            disabled={!this.state.videoProduced}
+          >
+            <IonSpinner slot="end" hidden={!this.state.producingVideo} />
+            <IonIcon icon={playCircle} hidden={this.state.producingVideo} />
+          </IonButton>
+              <IonLabel hidden={!this.state.videoProduced}>'{this.state.producedVideoLocation}'</IonLabel>
         </IonContent>
       </IonPage>
     );

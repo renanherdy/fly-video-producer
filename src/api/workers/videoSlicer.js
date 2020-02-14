@@ -12,16 +12,17 @@ const api = {
 
 module.exports.cutIntoSlices = cutIntoSlices;
 module.exports.autoSlice = autoSlice;
+module.exports.mergeOutputs = mergeOutputs;
 
 async function cutIntoSlices(payload){
   const outDir = assureDirExistence(payload.outDirPath);
-  const mergedFilePath = getMergedPath(outDir, "fly-video.mp4");
+  const mergedFilePath = getMergedPath(outDir, "fly-scene"+payload.outSceneName+".mp4");
   const slicingData = payload.fileArray;
-  const resp = await renderToFile(slicingData, mergedFilePath, outDir);
+  const resp = await renderToFile(slicingData, mergedFilePath, outDir, payload.outSceneName);
   return resp;
 }
 
-async function renderToFile(slicingData, mergedFilePath, outDir) {
+async function renderToFile(slicingData, mergedFilePath, outDir, outSceneName) {
   const outputFiles = [];
   const inputPromises = [];
   let i = 0;
@@ -30,7 +31,7 @@ async function renderToFile(slicingData, mergedFilePath, outDir) {
     console.log('inputFile', inputFile);
     for (let slice of inputFile.slices) {
       i++;
-      slice.outputPath = path.join(outDir, "slice-" + pad(i, 3) + ".mp4");
+      slice.outputPath = path.join(outDir, "slice-" + outSceneName + '-' + pad(i, 3) + ".mp4");
       outputFiles.push(slice.outputPath);
       inputFile.promisesArray.push(await saveSlice(inputFile, slice));
     }
@@ -56,7 +57,7 @@ async function renderToFile(slicingData, mergedFilePath, outDir) {
       return data;
     })
     .then(data => {
-      return mergeOutputs(data, mergedFilePath, outDir);
+      return mergeOutputs(data, mergedFilePath, outDir, outSceneName);
     })
     .then(data => {
       return data;
@@ -94,7 +95,7 @@ async function autoSlice(inputFiles) {
   return resp;
 };
 
-async function mergeOutputs(data, mergedFilePath, outDir) {
+async function mergeOutputs(data, mergedFilePath, outDir, outSceneName) {
   return new Promise((resolve, reject) => {
     console.log("data", data);
     let fileContent = "";
@@ -103,7 +104,7 @@ async function mergeOutputs(data, mergedFilePath, outDir) {
         fileContent = fileContent.concat("file '", file.outputPath, "'\n");
       }
     }
-    const filenamesPath = path.join(outDir, "filenames.txt");
+    const filenamesPath = path.join(outDir, "filenames-"+outSceneName+".txt");
     fs.writeFileSync(filenamesPath, fileContent);
     const child_process = require("child_process");
 
@@ -114,7 +115,7 @@ async function mergeOutputs(data, mergedFilePath, outDir) {
         mergedFilePath + "'"
     );
     console.log("renderização concluída");
-    resolve(mergedFilePath);
+    resolve({"resultPath": mergedFilePath, outSceneName});
   });
 }
 
