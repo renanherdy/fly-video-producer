@@ -286,7 +286,7 @@ class ParagliderFlight extends React.Component<
   handleChange(event: any) {
     const listOfFiles = event.target.files;
     for (let i = 0; i < listOfFiles.length; i++) {
-      const socket = io();
+      const socket = io("ws://localhost:3001", { transports: ["websocket"] });
       const file = listOfFiles[i];
       if (!file.path) {
         console.log(

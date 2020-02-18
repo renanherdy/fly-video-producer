@@ -17,7 +17,7 @@ import {
   IonReorderGroup,
   IonButton,
   IonSpinner,
-  IonIcon,
+  IonIcon
 } from "@ionic/react";
 import React from "react";
 import io from "socket.io-client";
@@ -257,7 +257,7 @@ class Production extends React.Component<
     });
   }
   mergeAllScenes() {
-    const socket = io();
+    const socket = io("ws://localhost:3001", { transports: ["websocket"] });
     console.log("merge all scenes ", this.state.project.scenes);
     socket.emit("start-mergeVideos", this.state.project.scenes);
     socket.on("end-mergeVideos", (payload: any) => {
@@ -293,7 +293,10 @@ class Production extends React.Component<
     for (let scene of listOfScenes) {
       scene.event.payload.outSceneName = scene.name;
       pendingScenes.push(scene);
-      const socket = io();
+      const socket = io("ws://localhost:3001", {
+        transports: ["websocket"],
+        reconnection: false
+      });
       socket.emit("start-cutIntoSlices", scene.event.payload);
       socket.on(
         "end-cutIntoSlices-" + scene.event.payload.outSceneName,
@@ -428,7 +431,9 @@ class Production extends React.Component<
             <IonSpinner slot="end" hidden={!this.state.producingVideo} />
             <IonIcon icon={playCircle} hidden={this.state.producingVideo} />
           </IonButton>
-              <IonLabel hidden={!this.state.videoProduced}>'{this.state.producedVideoLocation}'</IonLabel>
+          <IonLabel hidden={!this.state.videoProduced}>
+            '{this.state.producedVideoLocation}'
+          </IonLabel>
         </IonContent>
       </IonPage>
     );
