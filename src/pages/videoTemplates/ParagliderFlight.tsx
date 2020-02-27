@@ -10,7 +10,9 @@ import {
   IonCol,
   IonRow,
   IonLabel,
-  IonInput
+  IonInput,
+  IonGrid,
+  IonSpinner
 } from "@ionic/react";
 import React from "react";
 import FileList from "../../components/FileList";
@@ -22,6 +24,8 @@ import {
   saveCurrentSceneToLocalStorage
 } from "../../components/StorageManager";
 import path from "path";
+import { produceScene } from "../../components/SceneProducer";
+import VideoPlayer from "../../components/VideoPlayer";
 
 class ParagliderFlight extends React.Component<
   {
@@ -46,6 +50,12 @@ class ParagliderFlight extends React.Component<
         }
       | any;
     project: object | any;
+    width: any;
+    height: any;
+    videoProduced: boolean;
+    producedVideoLocation: string;
+    producingVideo: boolean;
+    videoPlayerRef: any;
   }
 > {
   constructor(props: any) {
@@ -56,9 +66,16 @@ class ParagliderFlight extends React.Component<
       timeoutText: "not started yet",
       fileInput: React.createRef(),
       currentScene: { inputs: [] },
-      project: {}
+      project: {},
+      width: 0,
+      height: 0,
+      videoProduced: false,
+      producedVideoLocation: "",
+      producingVideo: false,
+      videoPlayerRef: React.createRef()
     };
 
+    this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.triggerSelectBox = this.triggerSelectBox.bind(this);
@@ -68,6 +85,10 @@ class ParagliderFlight extends React.Component<
     );
     this.updateAllFilesDuration = this.updateAllFilesDuration.bind(this);
     this.recalculateSlices = this.recalculateSlices.bind(this);
+    this.generatePreview = this.generatePreview.bind(this);
+  }
+  updateWindowDimensions() {
+    this.setState({ width: window.innerWidth, height: window.innerHeight });
   }
 
   updateAllFilesDuration() {
@@ -91,15 +112,25 @@ class ParagliderFlight extends React.Component<
     );
     currentScene.type = this.getSceneType();
     this.completePropertyIfNotPresent(currentScene, "inputs", []);
-    currentScene.event = {
+    currentScene.event = this.generateEvent(currentScene);
+    return currentScene;
+  }
+  generateEvent(currentScene: {
+    inputs: {
+      path: any;
+      duration: number;
+      targetDuration: number;
+      numberOfSlices: number;
+    }[];
+    name: string;
+  }) {
+    const result = {
       emittedEvent: "start-cutIntoSlices",
-      payload: this.generatePayload(
-        this.calculateSlices(this.state.currentScene.inputs)
-      ),
+      payload: this.generatePayload(this.calculateSlices(currentScene.inputs)),
       responseEvent: "end-cutIntoSlices"
     };
-    currentScene.event.payload.outSceneName = currentScene.name;
-    return currentScene;
+    result.payload.outSceneName = currentScene.name;
+    return result;
   }
   completePropertyIfNotPresent(
     object: any,
@@ -115,7 +146,22 @@ class ParagliderFlight extends React.Component<
     return pathname.substring(pathname.lastIndexOf("/") + 1);
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps: any, prevState: any) {
+    const locationChanged = prevProps.location !== this.props.location;
+    if (locationChanged) {
+      console.log("leaving paraglider flight page");
+      console.log("prev", prevProps.location);
+      console.log("next", this.props.location);
+      this.setState(state => {
+        const project = loadProjectFromLocalStorage();
+        currentScene = getCurrentScene();
+        this.saveCurrentSceneIntoProject(project, currentScene);
+        saveProjectToLocalStorage(project);
+        const videoProduced = false;
+        const producedVideoLocation = "";
+        return { project, videoProduced, producedVideoLocation };
+      });
+    }
     let currentScene = getCurrentScene();
 
     if (this.state.currentScene.name !== currentScene.name) {
@@ -131,13 +177,18 @@ class ParagliderFlight extends React.Component<
     this.setState(state => {
       const project = loadProjectFromLocalStorage();
       const currentScene = this.loadCheckedCurrentScene();
-      console.log("loaded project", project);
 
       return {
         project: project,
-        currentScene
+        currentScene,
+        videoProduced: false
       };
     }, this.updateAllFilesDuration);
+    window.addEventListener("resize", this.updateWindowDimensions);
+    this.updateWindowDimensions();
+  }
+  componentWillUnmount() {
+    window.removeEventListener("resize", this.updateWindowDimensions);
   }
 
   getSliceArray(duration: number, slices: { qty: number; duration: number }) {
@@ -210,11 +261,7 @@ class ParagliderFlight extends React.Component<
     console.log("state ", this.state);
     const currentScene = this.state.currentScene;
     const project = this.state.project;
-    const payload = this.generatePayload(
-      this.calculateSlices(this.state.currentScene.inputs)
-    );
-    payload.outSceneName = currentScene.name;
-    currentScene.event.payload = payload;
+    currentScene.event = this.generateEvent(currentScene);
     this.saveCurrentSceneIntoProject(project, currentScene);
     saveCurrentSceneToLocalStorage(currentScene);
     saveProjectToLocalStorage(project);
@@ -325,7 +372,7 @@ class ParagliderFlight extends React.Component<
     }
   }
   getNumberOfSlices(targetDuration: number) {
-    return Math.ceil(targetDuration / 4);
+    return Math.ceil(targetDuration / 6);
   }
   getTargetDuration(duration: number) {
     return Math.ceil(duration / 8);
@@ -396,6 +443,24 @@ class ParagliderFlight extends React.Component<
       return { currentScene };
     });
   }
+  generatePreview() {
+    this.setState({
+      producedVideoLocation: "",
+      videoProduced: false,
+      producingVideo: true
+    });
+    const currentScene = getCurrentScene();
+
+    produceScene(currentScene).then(payload => {
+      const videoPlayerRef = React.createRef();
+      this.setState({
+        producedVideoLocation: "/getVideoFile/?path=" + payload.resultPath,
+        videoProduced: true,
+        producingVideo: false,
+        videoPlayerRef
+      });
+    });
+  }
 
   render() {
     return (
@@ -460,7 +525,7 @@ class ParagliderFlight extends React.Component<
             </IonCol>
           </IonRow>
           <IonRow>
-            <IonCol size="12">
+            <IonCol size="6">
               <IonButton
                 color="success"
                 expand="full"
@@ -471,7 +536,31 @@ class ParagliderFlight extends React.Component<
                 Go Back to Production
               </IonButton>
             </IonCol>
+            <IonCol size="6">
+              <IonButton
+                color="secondary"
+                expand="full"
+                size="large"
+                onClick={this.generatePreview}
+                disabled={this.state.currentScene.inputs.length === 0}
+              >
+                Pre Produce Scene
+                <IonSpinner slot="end" hidden={!this.state.producingVideo} />
+              </IonButton>
+            </IonCol>
           </IonRow>
+          <IonGrid>
+            <IonRow>
+              <IonCol size="12">
+                <VideoPlayer
+                  ref={this.state.videoPlayerRef}
+                  width={this.state.width}
+                  hidden={!this.state.videoProduced}
+                  videoPath={this.state.producedVideoLocation}
+                />
+              </IonCol>
+            </IonRow>
+          </IonGrid>
         </IonContent>
       </IonPage>
     );

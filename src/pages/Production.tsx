@@ -17,7 +17,10 @@ import {
   IonReorderGroup,
   IonButton,
   IonSpinner,
-  IonIcon
+  IonIcon,
+  IonGrid,
+  IonRow,
+  IonCol
 } from "@ionic/react";
 import React from "react";
 import io from "socket.io-client";
@@ -29,6 +32,7 @@ import {
 } from "../components/StorageManager";
 import { ItemReorderEventDetail } from "@ionic/core";
 import Scene from "./Scene";
+import { produceScene } from "../components/SceneProducer";
 import { playCircle } from "ionicons/icons";
 
 class Production extends React.Component<
@@ -94,6 +98,10 @@ class Production extends React.Component<
     };
     textMessage: string;
     fileInput: any;
+    videoPlayerInput: any;
+    videoPlayer: any;
+    width: any;
+    height: any;
   }
 > {
   projectNameInput: any;
@@ -105,9 +113,14 @@ class Production extends React.Component<
       producingVideo: false,
       pendingScenes: [],
       fileInput: React.createRef(),
+      videoPlayerInput: React.createRef(),
+      videoPlayer: React.createRef(),
       textMessage: "",
-      project: getEmptyProject()
+      project: getEmptyProject(),
+      width: 0,
+      height: 0
     };
+    this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
     this.projectNameInput = React.createRef();
     this.triggerSelectBox = this.triggerSelectBox.bind(this);
     this.handleFileChange = this.handleFileChange.bind(this);
@@ -124,7 +137,6 @@ class Production extends React.Component<
     this.leavingPageActions = this.leavingPageActions.bind(this);
     this.enteringPageActions = this.enteringPageActions.bind(this);
     this.verifyAndMerge = this.verifyAndMerge.bind(this);
-    this.playVideo = this.playVideo.bind(this);
   }
 
   componentDidMount() {
@@ -132,9 +144,7 @@ class Production extends React.Component<
   }
 
   enteringPageActions() {
-    console.log("mount");
     const project = loadProjectFromLocalStorage();
-    console.log("loaded project", project);
 
     const newState = {
       fileInput: this.state.fileInput,
@@ -142,11 +152,13 @@ class Production extends React.Component<
       project: project
     };
     this.setState(newState);
+    window.addEventListener("resize", this.updateWindowDimensions);
+    this.updateWindowDimensions();
     this.props.history.block(this.leavingPageActions);
   }
 
   leavingPageActions(targetLocation: any) {
-    console.log("leaving page, going to", targetLocation);
+    window.removeEventListener("resize", this.updateWindowDimensions);
     return true;
   }
 
@@ -158,6 +170,9 @@ class Production extends React.Component<
         return { project };
       });
     }
+  }
+  updateWindowDimensions() {
+    this.setState({ width: window.innerWidth, height: window.innerHeight });
   }
 
   newProject() {
@@ -291,28 +306,10 @@ class Production extends React.Component<
     const listOfScenes = this.state.project.scenes;
     const pendingScenes = [];
     for (let scene of listOfScenes) {
-      scene.event.payload.outSceneName = scene.name;
       pendingScenes.push(scene);
-      const socket = io("ws://localhost:3001", {
-        transports: ["websocket"],
-        reconnection: false
-      });
-      socket.emit("start-cutIntoSlices", scene.event.payload);
-      socket.on(
-        "end-cutIntoSlices-" + scene.event.payload.outSceneName,
-        (payload: any) => {
-          socket.close();
-          this.handleEnd(payload);
-        }
-      );
+      produceScene(scene).then(this.handleEnd);
     }
     this.setState({ pendingScenes });
-  }
-  playVideo() {
-    console.log(
-      "this.state.videoProducedLocation",
-      this.state.producedVideoLocation
-    );
   }
 
   render() {
@@ -424,16 +421,28 @@ class Production extends React.Component<
           >
             Produce Fly Movie!
           </IonButton>
-          <IonButton
-            onClick={this.playVideo}
-            disabled={!this.state.videoProduced}
-          >
+          <IonButton disabled={!this.state.videoProduced}>
             <IonSpinner slot="end" hidden={!this.state.producingVideo} />
             <IonIcon icon={playCircle} hidden={this.state.producingVideo} />
           </IonButton>
           <IonLabel hidden={!this.state.videoProduced}>
             '{this.state.producedVideoLocation}'
           </IonLabel>
+          <IonGrid>
+            <IonRow>
+              <IonCol size="12">
+                <video
+                  ref={this.state.videoPlayer}
+                  src={
+                    "/getVideoFile/?path=" + this.state.producedVideoLocation
+                  }
+                  width={this.state.width + "px"}
+                  hidden={!this.state.videoProduced}
+                  controls
+                ></video>
+              </IonCol>
+            </IonRow>
+          </IonGrid>
         </IonContent>
       </IonPage>
     );

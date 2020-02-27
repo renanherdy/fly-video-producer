@@ -1,6 +1,7 @@
 var express = require("express");
 var videoSlicer = require("./workers/videoSlicer");
 var videoInfo = require("./workers/videoInfo");
+var videoPlayer = require("./workers/videoPlayer");
 var app = express();
 var http = require("http").createServer(app);
 var io = require("socket.io")(http, {
@@ -25,7 +26,7 @@ io.on("connection", function(socket) {
     videoSlicer.cutIntoSlices(payload).then(result => {
       const { resultPath, outSceneName } = result;
       try {
-        io.sockets.emit("end-cutIntoSlices-" + outSceneName, result);
+        socket.emit("end-cutIntoSlices-" + outSceneName, result);
       } catch (e) {
         console.log("error server side", e);
       }
@@ -65,6 +66,11 @@ io.on("connection", function(socket) {
   socket.on("disconnect", function() {});
 });
 
+app.get('/getVideoFile', (req,res) => {
+  console.log('serving file', req.query.path);
+  res.sendFile(req.query.path);
+
+});
 http.listen(3001, function() {
   console.log("Fly Video Producer API listening on port 3001!");
 });
