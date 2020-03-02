@@ -13,65 +13,102 @@ import {
 } from "@ionic/react";
 import React from "react";
 import { arrowDropdown, arrowDropup } from "ionicons/icons";
-import SlicedBar from "./SlicedBar";
-export default class FileItem extends React.Component<
+import ManuallySlicedBar from "./ManuallySlicedBar";
+export default class ManualFileItem extends React.Component<
   {
     file: {
       id: number;
+      targetStart: number;
+      targetEnd: number;
       path: string;
+      // slices: [
+      //   {
+      //     start: number;
+      //     end: number;
+      //   }
+      // ];
       duration: number;
-      targetDuration: number;
-      numberOfSlices: number;
       loaded: boolean;
     };
+    changeTargetStart: any;
+    changeTargetEnd: any;
     deleteItem: any;
-    changeTargetDuration: any;
-    changeNumberOfSlices: any;
   },
-  { file: { path: string; collapsed: boolean; duration: number } }
+  { file: { collapsed: boolean } }
 > {
   constructor(props: any) {
     super(props);
     this.state = {
       file: {
-        path: props.file.path,
-        duration: props.file.duration,
         collapsed: true
       }
     };
     this.expandItem = this.expandItem.bind(this);
-    this.changeTargetDurationValue = this.changeTargetDurationValue.bind(this);
-    this.changeNumberOfSlicesValue = this.changeNumberOfSlicesValue.bind(this);
+    this.changeTargetSliceValues = this.changeTargetSliceValues.bind(this);
+    this.changeTargetEndValue = this.changeTargetEndValue.bind(this);
+    this.changeTargetStartValue = this.changeTargetStartValue.bind(this);
+    this.getRangeValues = this.getRangeValues.bind(this);
   }
   expandItem() {
-    const newState = this.state;
-    newState.file.collapsed = !this.state.file.collapsed;
-    this.setState(newState);
+    this.setState((state: any) => {
+      const file = state.file;
+      file.collapsed = !file.collapsed;
+      return { file };
+    });
   }
-  changeTargetDurationValue(data: any) {
+  changeTargetEndValue(data: any) {
     if (Number.isNaN(data.detail.value)) {
-      this.props.changeTargetDuration(this.props.file, 1);
+      this.props.changeTargetEnd(this.props.file, 1);
       return;
     }
-    this.props.changeTargetDuration(this.props.file, data.detail.value);
+    this.props.changeTargetEnd(this.props.file, data.detail.value);
   }
-  changeNumberOfSlicesValue(data: any) {
+  changeTargetStartValue(data: any) {
     if (Number.isNaN(data.detail.value)) {
-      this.props.changeNumberOfSlices(this.props.file, 1);
+      this.props.changeTargetStart(this.props.file, 0);
       return;
     }
-    this.props.changeNumberOfSlices(this.props.file, data.detail.value);
+    this.props.changeTargetStart(this.props.file, data.detail.value);
   }
 
+  changeTargetSliceValues(data: any) {
+    if (
+      Number.isNaN(data.detail.value.lower) ||
+      Number.isNaN(data.detail.value.upper)
+    ) {
+      this.props.changeTargetStart(this.props.file, 0);
+      this.props.changeTargetEnd(this.props.file, this.props.file.duration);
+      return;
+    }
+    if(data.detail.value.lower===this.props.file.targetStart &&
+      data.detail.value.upper===this.props.file.targetEnd){
+        console.log('equalValues');
+        return;
+      }
+    console.log("data event", data);
+    this.props.changeTargetStart(this.props.file, data.detail.value.lower);
+    this.props.changeTargetEnd(this.props.file, data.detail.value.upper);
+  }
+  getRangeValues() {
+    return {
+      lower: this.props.file.targetStart,
+      upper: this.props.file.targetEnd
+    };
+  }
   render() {
     return (
       <IonItem>
         <IonGrid>
           <IonRow>
             <IonCol size="12">
-              <SlicedBar
-                numberOfSlices={this.props.file.numberOfSlices}
-                targetDuration={this.props.file.targetDuration}
+              <ManuallySlicedBar
+                // slices={this.props.file.slices}
+                slices={[
+                  {
+                    start: this.props.file.targetStart,
+                    end: this.props.file.targetEnd
+                  }
+                ]}
                 totalDuration={this.props.file.duration}
               />
             </IonCol>
@@ -105,62 +142,46 @@ export default class FileItem extends React.Component<
           <IonRow hidden={this.state.file.collapsed}>
             <IonCol>
               <IonRow>
-                <IonCol size="3">
+                <IonCol size="2">
                   <IonLabel color="secondary" position="stacked">
-                    Target duration (s): {this.props.file.targetDuration}
+                    Target start (s): {this.props.file.targetStart}
                   </IonLabel>
                   <IonInput
                     type="number"
                     min="1"
                     max={String(this.props.file.duration)}
-                    onIonChange={this.changeTargetDurationValue}
-                    value={String(this.props.file.targetDuration)}
+                    onIonChange={this.changeTargetStartValue}
+                    value={String(this.props.file.targetStart)}
                   ></IonInput>
                 </IonCol>
-                <IonCol size="9">
+                <IonCol size="8">
                   <IonRange
-                    min={1}
+                    dualKnobs={true}
+                    min={0}
                     max={this.props.file.duration}
                     color="secondary"
                     pin={true}
-                    value={this.props.file.targetDuration}
+                    value={this.getRangeValues()}
                     class="ion-no-padding"
-                    onIonChange={this.changeTargetDurationValue}
+                    onIonChange={this.changeTargetSliceValues}
                   >
-                    <IonLabel slot="start">1</IonLabel>
+                    <IonLabel slot="start">
+                      {this.props.file.targetStart}
+                    </IonLabel>
                     <IonLabel slot="end">{this.props.file.duration}</IonLabel>
                   </IonRange>
                 </IonCol>
-              </IonRow>
-              <IonRow>
-                <IonCol size="3">
+                <IonCol size="2">
                   <IonLabel color="secondary" position="stacked">
-                    Number of slices: {this.props.file.numberOfSlices}
+                    Target end: {this.props.file.targetEnd}
                   </IonLabel>
                   <IonInput
                     type="number"
                     min="1"
-                    max={String(Math.round(this.props.file.duration / 3))}
-                    onIonChange={this.changeNumberOfSlicesValue}
-                    value={String(this.props.file.numberOfSlices)}
+                    max={String(Math.round(this.props.file.duration))}
+                    onIonChange={this.changeTargetEndValue}
+                    value={String(this.props.file.targetEnd)}
                   ></IonInput>
-                </IonCol>
-                <IonCol size="9">
-                  <IonLabel slot="start">Number of slices</IonLabel>
-                  <IonRange
-                    min={1}
-                    max={Math.round(this.props.file.duration / 3)}
-                    color="secondary"
-                    pin={true}
-                    value={this.props.file.numberOfSlices}
-                    onIonChange={this.changeNumberOfSlicesValue}
-                    class="ion-no-padding"
-                  >
-                    <IonLabel slot="start">1</IonLabel>
-                    <IonLabel slot="end">
-                      {Math.round(this.props.file.duration / 3)}
-                    </IonLabel>
-                  </IonRange>
                 </IonCol>
               </IonRow>
               <IonRow>

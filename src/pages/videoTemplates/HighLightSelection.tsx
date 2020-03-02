@@ -15,7 +15,7 @@ import {
   IonSpinner
 } from "@ionic/react";
 import React from "react";
-import FileList from "../../components/FileList";
+import ManualFileList from "../../components/ManualFileList";
 import io from "socket.io-client";
 import {
   loadProjectFromLocalStorage,
@@ -27,7 +27,7 @@ import path from "path";
 import { produceScene } from "../../components/SceneProducer";
 import VideoPlayer from "../../components/VideoPlayer";
 
-class ParagliderFlight extends React.Component<
+class HighLightSelection extends React.Component<
   {
     history: any;
     location: { pathname: string } | any;
@@ -43,8 +43,8 @@ class ParagliderFlight extends React.Component<
             path: string;
             hash: string;
             duration: number;
-            targetDuration: number;
-            numberOfSlices: number;
+            targetStart: number;
+            targetEnd: number;
             loaded: boolean;
           }>;
         }
@@ -117,8 +117,8 @@ class ParagliderFlight extends React.Component<
     inputs: {
       path: any;
       duration: number;
-      targetDuration: number;
-      numberOfSlices: number;
+      targetStart: number;
+      targetEnd: number;
     }[];
     name: string;
   }) {
@@ -277,19 +277,15 @@ class ParagliderFlight extends React.Component<
     listOfFiles: {
       path: any;
       duration: number;
-      targetDuration: number;
-      numberOfSlices: number;
+      targetStart: number;
+      targetEnd: number;
     }[]
   ) {
     let array = [];
     for (let file of listOfFiles) {
       let item = {
         path: file.path,
-        slices: this.getSlices(
-          file.duration,
-          file.targetDuration,
-          file.numberOfSlices
-        )
+        slices: [{ start: file.targetStart, end: file.targetEnd }]
       };
       array.push(item);
     }
@@ -302,31 +298,6 @@ class ParagliderFlight extends React.Component<
       outSceneName: ""
     };
     return payload;
-  }
-  getSlices(duration: number, targetDuration: number, numberOfSlices: number) {
-    if (duration <= targetDuration) {
-      return [
-        {
-          start: 0,
-          end: duration
-        }
-      ];
-    } else {
-      const wastedTime = duration - targetDuration;
-      const wastedSliceDuration = wastedTime / numberOfSlices;
-      const offSet = wastedSliceDuration / 2;
-      const sliceDuration = targetDuration / numberOfSlices;
-      const sliceArray = [];
-      for (let i = 1; i <= numberOfSlices; i++) {
-        const sliceStart =
-          i * wastedSliceDuration - offSet + (i - 1) * sliceDuration;
-        sliceArray.push({
-          start: sliceStart,
-          end: sliceStart + sliceDuration
-        });
-      }
-      return sliceArray;
-    }
   }
 
   handleChange(event: any) {
@@ -346,20 +317,20 @@ class ParagliderFlight extends React.Component<
           path: file.path,
           hash,
           duration: 0,
-          targetDuration: 0,
-          numberOfSlices: 0,
+          targetStart: 0,
+          targetEnd: 0,
           loaded: false
         },
         () => {
           const payload = { videoFilePath: file.path, hash };
           socket.emit("start-getVideoDuration", payload);
           socket.on("end-getVideoDuration", (data: any) => {
-            const targetDuration = this.getTargetDuration(data.duration);
-            const numberOfSlices = this.getNumberOfSlices(targetDuration);
+            const targetStart = 0;
+            const targetEnd = data.duration;
             const properties = {
               duration: data.duration,
-              targetDuration,
-              numberOfSlices,
+              targetStart,
+              targetEnd,
               loaded: true
             };
             this.changeFilePropertiesByHash(data.hash, properties);
@@ -387,8 +358,8 @@ class ParagliderFlight extends React.Component<
       const listOfFiles = state.currentScene.inputs.map((item: any) => {
         if (testHash(item)) {
           item.duration = data.duration;
-          item.targetDuration = data.targetDuration;
-          item.numberOfSlices = data.numberOfSlices;
+          item.targetStart = data.targetStart;
+          item.targetEnd = data.targetEnd;
           item.loaded = data.loaded;
         }
         return item;
@@ -407,8 +378,8 @@ class ParagliderFlight extends React.Component<
       path: string;
       hash: string;
       duration: number;
-      targetDuration: number;
-      numberOfSlices: number;
+      targetStart: number;
+      targetEnd: number;
       loaded: boolean;
     },
     callback: any
@@ -472,7 +443,7 @@ class ParagliderFlight extends React.Component<
             <IonButtons slot="start">
               <IonBackButton defaultHref="/home" />
             </IonButtons>
-            <IonTitle>Paraglider Flight</IonTitle>
+            <IonTitle>HighLight Selection</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonContent>
@@ -496,7 +467,7 @@ class ParagliderFlight extends React.Component<
           </IonRow>
           <IonRow>
             <IonCol size="12">
-              <FileList
+              <ManualFileList
                 files={this.state.currentScene.inputs}
                 onChange={this.arrayChanged}
               />
@@ -570,4 +541,4 @@ class ParagliderFlight extends React.Component<
     );
   }
 }
-export default ParagliderFlight;
+export default HighLightSelection;

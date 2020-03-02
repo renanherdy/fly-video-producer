@@ -1,9 +1,9 @@
 import { IonList, IonReorderGroup } from "@ionic/react";
 import React from "react";
-import FileItem from "./FileItem";
+import ManualFileItem from "./ManualFileItem";
 import { ItemReorderEventDetail } from "@ionic/core";
 
-export default class FileList extends React.Component<
+export default class ManualFileList extends React.Component<
   { files: Array<any>; onChange: any },
   {}
 > {
@@ -11,8 +11,8 @@ export default class FileList extends React.Component<
     super(props);
     this.doReorder = this.doReorder.bind(this);
     this.deleteItem = this.deleteItem.bind(this);
-    this.changeNumberOfSlices = this.changeNumberOfSlices.bind(this);
-    this.changeTargetDuration = this.changeTargetDuration.bind(this);
+    this.changeTargetStart = this.changeTargetStart.bind(this);
+    this.changeTargetEnd = this.changeTargetEnd.bind(this);
   }
 
   deleteItem(file: any) {
@@ -20,13 +20,13 @@ export default class FileList extends React.Component<
     this.props.onChange(this.props.files);
   }
 
-  changeNumberOfSlices(file: { id: any }, value: any) {
-    this.props.files[file.id].numberOfSlices = value;
+  changeTargetStart(file: { id: any }, value: any) {
+    this.props.files[file.id].targetStart = value;
     this.props.onChange(this.props.files);
   }
 
-  changeTargetDuration(file: { id: any }, value: any) {
-    this.props.files[file.id].targetDuration = value;
+  changeTargetEnd(file: { id: any }, value: any) {
+    this.props.files[file.id].targetEnd = value;
     this.props.onChange(this.props.files);
   }
 
@@ -45,27 +45,27 @@ export default class FileList extends React.Component<
                 collapsed: boolean;
                 hash: string;
                 duration: number;
-                numberOfSlices: number;
-                targetDuration: number;
+                targetStart: number;
+                targetEnd: number;
                 loaded: boolean;
               },
               index
             ) => {
               return (
-                <FileItem
+                <ManualFileItem
                   key={file.hash}
                   file={{
                     id: index,
                     path: file.path,
                     duration: file.duration,
-                    numberOfSlices: file.numberOfSlices,
-                    targetDuration: file.targetDuration,
-                    loaded: file.loaded
+                    targetStart: file.targetStart,
+                    targetEnd: file.targetEnd,
+                    loaded: file.loaded,
                   }}
-                  changeNumberOfSlices={this.changeNumberOfSlices}
-                  changeTargetDuration={this.changeTargetDuration}
+                  changeTargetStart={this.changeTargetStart}
+                  changeTargetEnd={this.changeTargetEnd}
                   deleteItem={this.deleteItem}
-                ></FileItem>
+                ></ManualFileItem>
               );
             }
           )}

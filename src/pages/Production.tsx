@@ -129,6 +129,7 @@ class Production extends React.Component<
     this.loadScene = this.loadScene.bind(this);
     this.deleteScene = this.deleteScene.bind(this);
     this.addParagliderFlight = this.addParagliderFlight.bind(this);
+    this.addHighLightSelection = this.addHighLightSelection.bind(this);
     this.doReorder = this.doReorder.bind(this);
     this.handleEnd = this.handleEnd.bind(this);
     this.produceVideo = this.produceVideo.bind(this);
@@ -226,7 +227,7 @@ class Production extends React.Component<
   }
   loadScene(scene: any) {
     saveCurrentSceneToLocalStorage(scene);
-    this.props.history.push("/videoTemplates/ParagliderFlight");
+    this.props.history.push("/videoTemplates/" + scene.type);
   }
   deleteScene(scene: any) {
     this.setState(state => {
@@ -240,6 +241,10 @@ class Production extends React.Component<
     });
   }
 
+  addHighLightSelection() {
+    saveCurrentSceneToLocalStorage({});
+    this.props.history.push("/videoTemplates/HighLightSelection");
+  }
   addParagliderFlight() {
     saveCurrentSceneToLocalStorage({});
     this.props.history.push("/videoTemplates/ParagliderFlight");
@@ -280,7 +285,11 @@ class Production extends React.Component<
       this.setState({
         producingVideo: false,
         videoProduced: true,
-        producedVideoLocation: payload.resultPath
+        producedVideoLocation:
+          "/getVideoFile/?path=" +
+          payload.resultPath +
+          "&t=" +
+          String(Date.now())
       });
       console.log("totally merged on: ", payload);
     });
@@ -324,7 +333,10 @@ class Production extends React.Component<
           </IonToolbar>
         </IonHeader>
         <IonContent>
-          {/* <IonRow>
+          <IonGrid>
+            <IonRow>
+              <IonCol>
+                {/* <IonRow>
             <IonCol>
               <IonInput
                 type="text"
@@ -371,75 +383,95 @@ class Production extends React.Component<
               </IonRow>
             </IonCol>
           </IonRow> */}
-          <IonList>
-            <IonListHeader>
-              <IonLabel>Edit scenes</IonLabel>
-            </IonListHeader>
-            <IonReorderGroup disabled={false} onIonItemReorder={this.doReorder}>
-              {this.state.project.scenes.map(
-                (item: { name: string; type: string }) => {
-                  return (
-                    <Scene
-                      key={item.name}
-                      deleteScene={this.deleteScene}
-                      loadScene={this.loadScene}
-                      scene={item}
-                    ></Scene>
-                  );
-                }
-              )}
-            </IonReorderGroup>
-          </IonList>
-        </IonContent>
-        <IonCard>
-          <IonCardContent>
-            Templates make the video producing more efficient, you can use one
-            of the listed or produce your video by adding scenes to the
-            timeline.
-          </IonCardContent>
-        </IonCard>
-        <IonContent>
-          <IonList>
-            <IonListHeader>
-              <IonLabel>Add Template to Production</IonLabel>
-            </IonListHeader>
-            <IonItem>
-              <IonCard button onClick={this.addParagliderFlight}>
-                <IonCardHeader>
-                  <IonCardTitle>Paraglider Flight</IonCardTitle>
-                </IonCardHeader>
-                <IonCardContent>
-                  This template will cut your video sources to slices, producing
-                  a short preview of the whole recorded videos
-                </IonCardContent>
-              </IonCard>
-            </IonItem>
-          </IonList>
-          <IonButton
-            onClick={this.produceVideo}
-            disabled={this.state.producingVideo}
-          >
-            Produce Fly Movie!
-          </IonButton>
-          <IonButton disabled={!this.state.videoProduced}>
-            <IonSpinner slot="end" hidden={!this.state.producingVideo} />
-            <IonIcon icon={playCircle} hidden={this.state.producingVideo} />
-          </IonButton>
-          <IonLabel hidden={!this.state.videoProduced}>
-            '{this.state.producedVideoLocation}'
-          </IonLabel>
-          <IonGrid>
+                <IonList>
+                  <IonListHeader>
+                    <IonLabel>Edit scenes</IonLabel>
+                  </IonListHeader>
+                  <IonReorderGroup
+                    disabled={false}
+                    onIonItemReorder={this.doReorder}
+                  >
+                    {this.state.project.scenes.map(
+                      (item: { name: string; type: string }) => {
+                        return (
+                          <Scene
+                            key={item.name}
+                            deleteScene={this.deleteScene}
+                            loadScene={this.loadScene}
+                            scene={item}
+                          ></Scene>
+                        );
+                      }
+                    )}
+                  </IonReorderGroup>
+                </IonList>
+              </IonCol>
+            </IonRow>
             <IonRow>
-              <IonCol size="12">
-                <video
-                  ref={this.state.videoPlayer}
-                  src={
-                    "/getVideoFile/?path=" + this.state.producedVideoLocation
-                  }
-                  width={this.state.width + "px"}
-                  hidden={!this.state.videoProduced}
-                  controls
-                ></video>
+              <IonCol>
+                <IonCard>
+                  <IonCardContent>
+                    Templates make the video producing more efficient, you can
+                    use one of the listed or produce your video by adding scenes
+                    to the timeline.
+                  </IonCardContent>
+                </IonCard>
+                <IonList>
+                  <IonListHeader>
+                    <IonLabel>Add Template to Production</IonLabel>
+                  </IonListHeader>
+                  <IonItem>
+                    <IonCard button onClick={this.addParagliderFlight}>
+                      <IonCardHeader>
+                        <IonCardTitle>Paraglider Flight</IonCardTitle>
+                      </IonCardHeader>
+                      <IonCardContent>
+                        This template will cut your video sources to slices,
+                        producing a short preview of the whole recorded videos
+                      </IonCardContent>
+                    </IonCard>
+                  </IonItem>
+                  <IonItem>
+                    <IonCard button onClick={this.addHighLightSelection}>
+                      <IonCardHeader>
+                        <IonCardTitle>HighLight Selection</IonCardTitle>
+                      </IonCardHeader>
+                      <IonCardContent>
+                        This template will cut your video manually to make
+                        specific recordings available on the output video.
+                      </IonCardContent>
+                    </IonCard>
+                  </IonItem>
+                </IonList>
+                <IonButton
+                  onClick={this.produceVideo}
+                  disabled={this.state.producingVideo}
+                >
+                  Produce Fly Movie!
+                </IonButton>
+                <IonButton disabled={!this.state.videoProduced}>
+                  <IonSpinner slot="end" hidden={!this.state.producingVideo} />
+                  <IonIcon
+                    icon={playCircle}
+                    hidden={this.state.producingVideo}
+                  />
+                </IonButton>
+                <IonLabel hidden={!this.state.videoProduced}>
+                  '{this.state.producedVideoLocation}'
+                </IonLabel>
+                <IonGrid>
+                  <IonRow>
+                    <IonCol size="12">
+                      <video
+                        ref={this.state.videoPlayer}
+                        src={this.state.producedVideoLocation}
+                        width={this.state.width + "px"}
+                        hidden={!this.state.videoProduced}
+                        controls
+                      ></video>
+                    </IonCol>
+                  </IonRow>
+                </IonGrid>
               </IonCol>
             </IonRow>
           </IonGrid>

@@ -67,9 +67,10 @@ io.on("connection", function(socket) {
 });
 
 app.get('/getVideoFile', (req,res) => {
-  console.log('serving file', req.query.path);
-  res.sendFile(req.query.path);
-
+  if(req.query.path&&req.query.path!==""){
+    console.log('serving file', req.query.path);
+    res.sendFile(req.query.path);
+  }
 });
 http.listen(3001, function() {
   console.log("Fly Video Producer API listening on port 3001!");

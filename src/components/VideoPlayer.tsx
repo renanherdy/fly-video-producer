@@ -9,18 +9,6 @@ export default class VideoPlayer extends React.Component<
   {
   }
 > {
-  constructor(
-    props: Readonly<{
-      width: any;
-      videoPath: string;
-      hidden: boolean;
-    }>
-  ) {
-    super(props);
-  }
-  onComponentDidUpdate(){
-    console.log('this.props.videoPath', this.props.videoPath);
-  }
   render() {
     return (
       <div>
