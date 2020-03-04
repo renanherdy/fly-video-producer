@@ -340,6 +340,11 @@ class HighLightSelection extends React.Component<
         }
       );
     }
+    this.setState((state: any) => {
+      const fileInput = state.fileInput;
+      fileInput.current.value = null;
+      return { fileInput };
+    });
   }
   getNumberOfSlices(targetDuration: number) {
     return Math.ceil(targetDuration / 6);

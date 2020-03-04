@@ -68,7 +68,7 @@ io.on("connection", function(socket) {
 
 app.get('/getVideoFile', (req,res) => {
   if(req.query.path&&req.query.path!==""){
-    console.log('serving file', req.query.path);
+    console.log('serving file ', req.query.path);
     res.sendFile(req.query.path);
   }
 });

@@ -82,10 +82,8 @@ export default class ManualFileItem extends React.Component<
     }
     if(data.detail.value.lower===this.props.file.targetStart &&
       data.detail.value.upper===this.props.file.targetEnd){
-        console.log('equalValues');
         return;
       }
-    console.log("data event", data);
     this.props.changeTargetStart(this.props.file, data.detail.value.lower);
     this.props.changeTargetEnd(this.props.file, data.detail.value.upper);
   }

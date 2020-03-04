@@ -31,9 +31,6 @@ export default class ManuallySlicedBar extends React.Component<
   }
   getWidth(totalDuration: number, slice: { start: number; end: number }) {
     const sliceDuration = slice.end - slice.start;
-    console.log('slice.end', slice.end);
-    console.log('slice.start', slice.start);
-    console.log('sliceDuration', sliceDuration);
     
     return this.getPercentualString(sliceDuration / totalDuration);
   }

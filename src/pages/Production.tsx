@@ -456,9 +456,6 @@ class Production extends React.Component<
                     hidden={this.state.producingVideo}
                   />
                 </IonButton>
-                <IonLabel hidden={!this.state.videoProduced}>
-                  '{this.state.producedVideoLocation}'
-                </IonLabel>
                 <IonGrid>
                   <IonRow>
                     <IonCol size="12">

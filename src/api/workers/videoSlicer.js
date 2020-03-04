@@ -16,7 +16,7 @@ module.exports.mergeOutputs = mergeOutputs;
 
 async function cutIntoSlices(payload){
   const outDir = assureDirExistence(payload.outDirPath);
-  const mergedFilePath = getMergedPath(outDir, "fly-scene"+payload.outSceneName+".mp4");
+  const mergedFilePath = getMergedPath(outDir, "fly-"+payload.outSceneName+".mp4");
   const slicingData = payload.fileArray;
   const resp = await renderToFile(slicingData, mergedFilePath, outDir, payload.outSceneName);
   return resp;
