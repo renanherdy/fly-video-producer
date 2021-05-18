@@ -1,6 +1,6 @@
 const { app, BrowserWindow, Menu } = require('electron');
 const isDevMode = require('electron-is-dev');
-const { CapacitorSplashScreen } = require('@capacitor/electron');
+const { CapacitorSplashScreen, configCapacitor } = require('@capacitor/electron');
 
 const path = require('path');
 
@@ -11,7 +11,7 @@ let mainWindow = null;
 let splashScreen = null;
 
 //Change this if you do not wish to have a splash screen
-let useSplashScreen = false;
+let useSplashScreen = true;
 
 // Create simple menu for easy devtools access, and for demo
 const menuTemplateDev = [
@@ -31,8 +31,8 @@ const menuTemplateDev = [
 async function createWindow () {
   // Define our main window size
   mainWindow = new BrowserWindow({
-    height: 846,
-    width: 600,
+    height: 920,
+    width: 1600,
     show: false,
     webPreferences: {
       nodeIntegration: true,
@@ -40,24 +40,22 @@ async function createWindow () {
     }
   });
 
+  configCapacitor(mainWindow);
+
   if (isDevMode) {
     // Set our above template to the Menu Object if we are in development mode, dont want users having the devtools.
-    // Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplateDev));
+    Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplateDev));
     // If we are developers we might as well open the devtools by default.
-    // mainWindow.webContents.openDevTools();
-    console.log(__dirname);
+    mainWindow.webContents.openDevTools();
   }
 
   if(useSplashScreen) {
     splashScreen = new CapacitorSplashScreen(mainWindow);
     splashScreen.init(false);
   } else {
-    // mainWindow.loadURL(`file://${__dirname}/app/index.html`);
-    mainWindow.loadURL(`http://localhost:3000/index.html`);
+    mainWindow.loadURL(`file://${__dirname}/app/index.html`);
     mainWindow.webContents.on('dom-ready', () => {
       mainWindow.show();
-      // console.log('__dirname');
-      // console.log(__dirname);
     });
   }
 

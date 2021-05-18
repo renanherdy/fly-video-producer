@@ -33,12 +33,15 @@ import {
 import { ItemReorderEventDetail } from "@ionic/core";
 import Scene from "./Scene";
 import { produceScene } from "../components/SceneProducer";
-import { playCircle } from "ionicons/icons";
+import { playCircle, albums } from "ionicons/icons";
 
 class Production extends React.Component<
   { history: any; location: any },
   {
     producedVideoLocation: string;
+    videoPath: string;
+    producingThumbnails: boolean;
+    thumbnailsProduced: boolean;
     videoProduced: boolean;
     producingVideo: boolean;
     pendingScenes: any;
@@ -108,7 +111,10 @@ class Production extends React.Component<
   constructor(props: any) {
     super(props);
     this.state = {
+      videoPath: "",
       producedVideoLocation: "",
+      producingThumbnails: false,
+      thumbnailsProduced: false,
       videoProduced: false,
       producingVideo: false,
       pendingScenes: [],
@@ -138,6 +144,7 @@ class Production extends React.Component<
     this.leavingPageActions = this.leavingPageActions.bind(this);
     this.enteringPageActions = this.enteringPageActions.bind(this);
     this.verifyAndMerge = this.verifyAndMerge.bind(this);
+    this.generateThumbnails = this.generateThumbnails.bind(this);
   }
 
   componentDidMount() {
@@ -289,7 +296,8 @@ class Production extends React.Component<
           "/getVideoFile/?path=" +
           payload.resultPath +
           "&t=" +
-          String(Date.now())
+          String(Date.now()),
+          videoPath: payload.resultPath,
       });
       console.log("totally merged on: ", payload);
     });
@@ -319,6 +327,22 @@ class Production extends React.Component<
       produceScene(scene).then(this.handleEnd);
     }
     this.setState({ pendingScenes });
+  }
+
+  generateThumbnails() {
+    this.setState({ producingThumbnails: true, thumbnailsProduced: false });
+    const socket = io("ws://localhost:3001", { transports: ["websocket"] });
+    const payload = {videoPath: this.state.videoPath};
+    console.log("generateThumbnails ", payload);
+    socket.emit("start-generateThumbnails", payload);
+    socket.on("end-generateThumbnails", (payload: any) => {
+      socket.close();
+      this.setState({
+        producingThumbnails: false,
+        thumbnailsProduced: true,
+      });
+      console.log("thumbnails produced on: ", payload);
+    });
   }
 
   render() {
@@ -455,6 +479,13 @@ class Production extends React.Component<
                     icon={playCircle}
                     hidden={this.state.producingVideo}
                   />
+                </IonButton>
+                <IonButton
+                  disabled={!this.state.videoProduced}
+                  onClick={this.generateThumbnails}
+                >
+                  <IonSpinner slot="end" hidden={!this.state.producingThumbnails} />
+                  <IonIcon icon={albums} hidden={this.state.producingThumbnails} />
                 </IonButton>
                 <IonGrid>
                   <IonRow>

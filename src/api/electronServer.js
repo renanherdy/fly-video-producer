@@ -2,6 +2,7 @@ var express = require("express");
 var videoSlicer = require("./workers/videoSlicer");
 var videoInfo = require("./workers/videoInfo");
 var videoPlayer = require("./workers/videoPlayer");
+var imageService = require("./workers/imageService");
 var app = express();
 var http = require("http").createServer(app);
 var io = require("socket.io")(http, {
@@ -31,6 +32,19 @@ io.on("connection", function(socket) {
         console.log("error server side", e);
       }
       console.log("end-cutIntoSlices-" + outSceneName);
+      console.log("result", result);
+    });
+  });
+  socket.on("start-generateThumbnails", function(payload) {
+    console.log("start-generateThumbnails");
+    console.log("payload", payload);
+    imageService.generateThumbnails(payload).then(result => {
+      try {
+        socket.emit("end-generateThumbnails", result);
+      } catch (e) {
+        console.log("error server side", e);
+      }
+      console.log("end-generateThumbnails");
       console.log("result", result);
     });
   });

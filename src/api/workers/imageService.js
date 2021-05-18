@@ -1,7 +1,7 @@
 const ffmpeg = require("fluent-ffmpeg");
 const fs = require("fs");
 const path = require("path");
-
+const child_process = require("child_process");
 /*
 const api = {
   // input : {path: "string", hash: "string", slices: [{start: seconds, stop: seconds}]}
@@ -10,16 +10,41 @@ const api = {
 };
 */
 
-module.exports.cutIntoSlices = cutIntoSlices;
-module.exports.autoSlice = autoSlice;
-module.exports.mergeOutputs = mergeOutputs;
+module.exports.generateThumbnails = generateThumbnails;
 
-async function cutIntoSlices(payload){
-  const outDir = assureDirExistence(payload.outDirPath);
-  const mergedFilePath = getMergedPath(outDir, "fly-"+payload.outSceneName+".mp4");
-  const slicingData = payload.fileArray;
-  const resp = await renderToFile(slicingData, mergedFilePath, outDir, payload.outSceneName);
-  return resp;
+async function generateThumbnails(payload) {
+  const filePath = payload.videoPath;
+  const outDirPath = path.dirname(filePath);
+  const subfolderName = "thumbnails";
+  const thumbnailsPath = path.join(outDirPath, subfolderName);
+  const outDir = assureDirExistence(thumbnailsPath);
+  const interval = "9";
+
+  child_process.execSync(
+    "ffmpeg -i '" +
+      filePath +
+      "' -vf fps=1/" +
+      interval +
+      " '" +
+      thumbnailsPath +
+      "/capa-%04d.jpg'"
+  );
+
+  putCaption(outDir, "capa-0001.jpg");
+
+  return outDir;
+}
+function putCaption(outDir, fileName) {
+  const gm = require("gm");
+  gm(path.join(outDir, fileName))
+    .resize(353, 257)
+    .autoOrient()
+    .write(fileName, function(err) {
+      if (!err) {console.log(" hooray! ")}
+      else{
+        console.log("err", err);
+      };
+    });
 }
 
 async function renderToFile(slicingData, mergedFilePath, outDir, outSceneName) {
@@ -28,10 +53,13 @@ async function renderToFile(slicingData, mergedFilePath, outDir, outSceneName) {
   let i = 0;
   for (let inputFile of slicingData) {
     inputFile.promisesArray = [];
-    console.log('inputFile', inputFile);
+    console.log("inputFile", inputFile);
     for (let slice of inputFile.slices) {
       i++;
-      slice.outputPath = path.join(outDir, "slice-" + outSceneName + '-' + pad(i, 3) + ".mp4");
+      slice.outputPath = path.join(
+        outDir,
+        "slice-" + outSceneName + "-" + pad(i, 3) + ".mp4"
+      );
       outputFiles.push(slice.outputPath);
       inputFile.promisesArray.push(await saveSlice(inputFile, slice));
     }
@@ -68,12 +96,11 @@ async function renderToFile(slicingData, mergedFilePath, outDir, outSceneName) {
     });
 }
 
-function getMergedPath(outDir, videoName){
+function getMergedPath(outDir, videoName) {
   return path.join(outDir, videoName);
 }
 
-
-function assureDirExistence(outDir){
+function assureDirExistence(outDir) {
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir);
   }
@@ -93,7 +120,7 @@ async function autoSlice(inputFiles) {
   const resp = await renderToFile(slicingData, mergedFilePath, outDir);
   console.log("merge ok");
   return resp;
-};
+}
 
 async function mergeOutputs(data, mergedFilePath, outDir, outSceneName) {
   return new Promise((resolve, reject) => {
@@ -104,7 +131,10 @@ async function mergeOutputs(data, mergedFilePath, outDir, outSceneName) {
         fileContent = fileContent.concat("file '", file.outputPath, "'\n");
       }
     }
-    const filenamesPath = path.join(outDir, "filenames-"+outSceneName+".txt");
+    const filenamesPath = path.join(
+      outDir,
+      "filenames-" + outSceneName + ".txt"
+    );
     fs.writeFileSync(filenamesPath, fileContent);
     const child_process = require("child_process");
 
@@ -112,10 +142,11 @@ async function mergeOutputs(data, mergedFilePath, outDir, outSceneName) {
       "ffmpeg -y -f concat -safe 0 -i '" +
         filenamesPath +
         "' -c copy '" +
-        mergedFilePath + "'"
+        mergedFilePath +
+        "'"
     );
     console.log("renderização concluída");
-    resolve({"resultPath": mergedFilePath, outSceneName});
+    resolve({ resultPath: mergedFilePath, outSceneName });
   });
 }
 
@@ -146,10 +177,6 @@ async function saveSlice(inputFile, slice) {
 function pad(number, width) {
   return new Array(+width + 1 - (number + "").length).join("0") + number;
 }
-
-
-
-
 
 async function loadInputFiles(inDir) {
   return new Promise((resolve, reject) => {
